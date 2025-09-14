@@ -1,16 +1,16 @@
 import re
 
-from aiogram import Dispatcher
+from aiogram import Dispatcher, F
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import Message
+from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from sqlalchemy import insert, select, delete
 
 from src.database.database import async_session_maker
 from src.database.models import Student
-from src.parse_tasks import get_problem_info
+from src.parse_tasks import get_problem_info, get_random_task_id
 from src.utils import check_registration
 
 
@@ -28,6 +28,10 @@ class RegisterStudentState(StatesGroup):
     get_student_phone_number = State()
 
 
+class TaskStates(StatesGroup):
+    waiting_for_solution = State()
+
+
 @dp.message(CommandStart())
 async def command_start_handler(message: Message):
     await message.answer(
@@ -41,16 +45,117 @@ async def command_get_info_handler(message: Message):
     await message.answer("Этот бот поможет тебе в подготовке к ЕГЭ/ОГЭ")
 
 
+math_task_numbers = [
+    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+    "11", "12", "13", "14", "15", "16", "17", "18", "19"
+]
+
+
 @dp.message(Command(commands="generate_task"))
 @check_registration
 async def command_test_handler(message: Message):
-    problem_text = get_problem_info('math', '27245')
-    await message.answer(problem_text)
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[10:15]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[15:19]],
+            [KeyboardButton(text="Отмена")]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+
+    await message.answer(
+        "📚 Выберите номер задания ЕГЭ по математике:",
+        reply_markup=keyboard
+    )
+
+
+@dp.message(F.text.in_(math_task_numbers))
+async def handle_task_selection(message: Message, state: FSMContext):
+    task_number = message.text
+
+    await state.update_data(task_number=task_number)
+
+    task_id = get_random_task_id(int(task_number))
+    problem_info = get_problem_info('math', f'{task_id}')
+
+    solution_keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="✅ Получить решение")],
+            [KeyboardButton(text="🔁 Выбрать другое задание")]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+
+    await message.answer(
+        f"📝 Задание №{task_number}:\n\n{problem_info["condition_clean"]}",
+        reply_markup=solution_keyboard
+    )
+    for i in range(len(problem_info["images_task"])):
+        await message.an(problem_info["images_task"][i])
+    await state.set_state(TaskStates.waiting_for_solution)
+    await state.update_data(problem_info=problem_info)
+
+
+@dp.message(F.text == "✅ Получить решение", TaskStates.waiting_for_solution)
+async def handle_solution_request(message: Message, state: FSMContext):
+    data = await state.get_data()
+    task_number = data.get('task_number')
+    problem_info = data.get('problem_info')
+
+    await message.answer(
+        f"✅ Решение для задания №{task_number}:\n\n{problem_info["solution_clean"]}",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    await state.clear()
+
+
+@dp.message(F.text == "🔁 Выбрать другое задание", TaskStates.waiting_for_solution)
+async def handle_change_task(message: Message, state: FSMContext):
+    await state.clear()
+
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[10:15]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[15:19]],
+            [KeyboardButton(text="Отмена")]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+
+    await message.answer(
+        "📚 Выберите номер задания ЕГЭ по математике:",
+        reply_markup=keyboard
+    )
+
+
+@dp.message(F.text == "Отмена")
+async def handle_cancel(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer(
+        "Выбор задания отменен",
+        reply_markup=ReplyKeyboardRemove()
+    )
 
 
 @dp.message(Command(commands="registration"))
 async def command_registration_handler(message: Message, state: FSMContext):
     await state.clear()
+
+    async with async_session_maker() as session:
+        query = select(Student).filter_by(tg_id=message.from_user.id)
+        result = await session.execute(query)
+        student_data = result.scalars().one_or_none()
+        if (student_data):
+            await state.clear()
+            await message.answer('Вы уже зарегистрированы, если хотите изменить свои данные, используйте /change_my_data')
+            return
 
     await state.set_state(RegisterStudentState.get_student_name)
     await message.answer(
@@ -85,7 +190,7 @@ async def get_phone_student(message: Message, state: FSMContext):
         return
 
     await state.update_data(student_email=message.text)
-    await message.answer("Напиши мне свой номер телефона (в формате +7 XXX XXX XX XX)")
+    await message.answer("Напиши мне свой номер телефона")
     await state.set_state(RegisterStudentState.get_student_phone_number)
 
 
@@ -142,8 +247,6 @@ async def final_of_registration(message: Message, state: FSMContext):
         )
     except Exception as e:
         await message.answer("❌ Произошла ошибка при сохранении данных. Попробуйте позже.")
-        # Логирование ошибки
-        print(f"Database error: {e}")
     finally:
         await state.clear()
 
@@ -158,7 +261,7 @@ async def command_registration_handler(message: Message):
 
     await message.answer(
         f"Ваши данные:\n"
-        f"👤 ФИО: {student_data.first_name + " " + student_data.last_name}\n"
+        f"👤 ФИО: {student_data.last_name + " " + student_data.first_name + " " + student_data.patronymic}\n"
         f"📧 Email: {student_data.email}\n"
         f"📞 Телефон: {student_data.number_phone}\n"
     )

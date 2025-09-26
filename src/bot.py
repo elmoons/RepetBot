@@ -1,6 +1,9 @@
 import re
 
 from aiogram import Dispatcher, F
+from aiogram.client import bot
+from aiogram.methods.send_photo import SendPhoto
+from aiogram.methods import SendPhoto
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -12,7 +15,6 @@ from src.database.database import async_session_maker
 from src.database.models import Student
 from src.parse_tasks import get_problem_info, get_random_task_id
 from src.utils import check_registration
-
 
 # Регулярные выражения для валидации
 NAME_PATTERN = re.compile(r'^[а-яёa-z\- ]{2,}$', re.IGNORECASE)
@@ -81,6 +83,8 @@ async def handle_task_selection(message: Message, state: FSMContext):
     task_id = get_random_task_id(int(task_number))
     problem_info = get_problem_info('math', f'{task_id}')
 
+    print(problem_info)
+
     solution_keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="✅ Получить решение")],
@@ -94,8 +98,14 @@ async def handle_task_selection(message: Message, state: FSMContext):
         f"📝 Задание №{task_number}:\n\n{problem_info["condition_clean"]}",
         reply_markup=solution_keyboard
     )
-    for i in range(len(problem_info["images_task"])):
-        await message.an(problem_info["images_task"][i])
+    # for i in range(len(problem_info["images_task"])):
+    #     await message.answer_photo(problem_info["images_task"][i])
+
+    await message.answer_photo(photo="https://ege.sdamgia.ru/formula/svg/4c/4ca5f4f7e94e31f4c6172328a3396f5a.svg")
+    # image_tasks_jpg = get_image_tasks_jpg(problem_info["images_task"])
+    # for i in range(len(image_tasks_jpg)):
+    #     await message.answer_photo(image_tasks_jpg[i])
+
     await state.set_state(TaskStates.waiting_for_solution)
     await state.update_data(problem_info=problem_info)
 
@@ -275,9 +285,8 @@ async def command_change_my_data_handler(message: Message, state: FSMContext):
         query = delete(Student).where(Student.tg_id == message.from_user.id)
         await session.execute(query)
         await session.commit()
-    await state.set_state(RegisterStudentState.get_student_name)
     await message.answer(
-        "Напиши ФИО (Например: Иванов Иван Иванович)."
+        "Необходимо заново пройти регистрацию по команде /register"
     )
 
 

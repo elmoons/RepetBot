@@ -125,7 +125,7 @@ async def handle_task_selection(message: Message, state: FSMContext):
     )
 
     await message.answer(
-        f"📝 Задание №{task_number}:\n\n{problem_info['condition_clean']}",
+        f"📝 Задание №{task_number} ({problem_info["id_of_task"]}):\n\n{problem_info['condition_clean']}",
         reply_markup=solution_keyboard,
     )
 
@@ -154,36 +154,6 @@ async def handle_task_selection(message: Message, state: FSMContext):
     await state.update_data(problem_info=problem_info)
 
 
-@dp.message(Command(commands="test"))
-@check_registration
-async def test(message: Message, state: FSMContext):
-    svg_coded_string = image_to_base64(
-        "https://ege.sdamgia.ru/formula/svg/71/71be21f76a77293c9ecbc4ab250b4c16.svg"
-    )
-    # svg_coded_string = image_to_base64("https://math-ege.sdamgia.ru/get_file?id=20487")
-
-    try:
-        # Декодируем base64 SVG
-        svg_bytes = base64.b64decode(svg_coded_string)
-
-        # Конвертируем SVG в PNG
-        png_bytes = io.BytesIO()
-        cairosvg.svg2png(bytestring=svg_bytes, write_to=png_bytes)
-        png_bytes.seek(0)
-
-        # Отправляем PNG как фото
-        await bot.send_photo(
-            chat_id=message.from_user.id,
-            photo=BufferedInputFile(png_bytes.getvalue(), filename="image.png"),
-        )
-        await message.reply(
-            "SVG изображение успешно конвертировано и отправлено как PNG!"
-        )
-
-    except Exception as e:
-        await message.reply(f"Произошла ошибка при отправке изображения: {e}")
-
-
 @dp.message(F.text == "✅ Получить решение", TaskStates.waiting_for_solution)
 async def handle_solution_request(message: Message, state: FSMContext):
     data = await state.get_data()
@@ -191,7 +161,7 @@ async def handle_solution_request(message: Message, state: FSMContext):
     problem_info = data.get("problem_info")
 
     await message.answer(
-        f"✅ Решение для задания №{task_number}:\n\n{problem_info['solution_clean']}",
+        f"✅ Решение для задания №{task_number} ({problem_info["id_of_task"]}):\n\n{problem_info['solution_clean']}",
         reply_markup=ReplyKeyboardRemove(),
     )
     solution_tasks = problem_info["images_solution"]

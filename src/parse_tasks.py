@@ -12,7 +12,8 @@ def get_problem_info(subject: str, problem_id: str):
     sdamgia = SdamGIA()
 
     result = sdamgia.get_problem_by_id(subject, problem_id)
-    # print(result)
+    print(result)
+    id_of_task = result["id"]
     condition_clean = clean_sdamgia_text(result["condition"]["text"])
     solution_clean = clean_sdamgia_text(result["solution"]["text"])
     images_task = result["condition"]["images"]
@@ -23,6 +24,7 @@ def get_problem_info(subject: str, problem_id: str):
     # Ответ: {result['answer']}
     # Решение: {solution_clean}
     data_task = {
+        "id_of_task": id_of_task,
         "condition_clean": condition_clean,
         "images_task": images_task,
         "solution_clean": solution_clean,
@@ -32,7 +34,7 @@ def get_problem_info(subject: str, problem_id: str):
     return data_task
 
 
-# print(get_problem_info('math', '27245'))
+print(get_problem_info('math', '27245'))
 
 
 def get_random_category_by_number(number_of_task: int):

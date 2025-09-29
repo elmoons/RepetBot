@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 async def main() -> None:
-    bot = Bot(token=settings.BOT_TOKEN,)
+    bot = Bot(token=settings.BOT_TOKEN)
     await dp.start_polling(bot)
 
 

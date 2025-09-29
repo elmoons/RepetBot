@@ -1,28 +1,42 @@
+import base64
+import io
 import re
 
-from aiogram import Dispatcher, F
-from aiogram.client import bot
+import cairosvg
+from aiogram import Dispatcher, F, Bot
 from aiogram.methods.send_photo import SendPhoto
 from aiogram.methods import SendPhoto
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from aiogram.types import (
+    Message,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+    BufferedInputFile,
+)
 from sqlalchemy import insert, select, delete
 
+from src.config import settings
+from src.convert_images import image_to_base64
 from src.database.database import async_session_maker
 from src.database.models import Student
 from src.parse_tasks import get_problem_info, get_random_task_id
 from src.utils import check_registration
 
 # Регулярные выражения для валидации
-NAME_PATTERN = re.compile(r'^[а-яёa-z\- ]{2,}$', re.IGNORECASE)
-EMAIL_PATTERN = re.compile(r'^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$', re.IGNORECASE)
-PHONE_PATTERN = re.compile(r'^(\+7|7|8)?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$')
+NAME_PATTERN = re.compile(r"^[а-яёa-z\- ]{2,}$", re.IGNORECASE)
+EMAIL_PATTERN = re.compile(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$", re.IGNORECASE)
+PHONE_PATTERN = re.compile(
+    r"^(\+7|7|8)?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$"
+)
 
 
 dp = Dispatcher(storage=MemoryStorage())
+bot = Bot(token=settings.BOT_TOKEN)
+
 
 class RegisterStudentState(StatesGroup):
     get_student_name = State()
@@ -48,8 +62,25 @@ async def command_get_info_handler(message: Message):
 
 
 math_task_numbers = [
-    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-    "11", "12", "13", "14", "15", "16", "17", "18", "19"
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
 ]
 
 
@@ -62,15 +93,14 @@ async def command_test_handler(message: Message):
             [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
             [KeyboardButton(text=str(i)) for i in math_task_numbers[10:15]],
             [KeyboardButton(text=str(i)) for i in math_task_numbers[15:19]],
-            [KeyboardButton(text="Отмена")]
+            [KeyboardButton(text="Отмена")],
         ],
         resize_keyboard=True,
-        one_time_keyboard=True
+        one_time_keyboard=True,
     )
 
     await message.answer(
-        "📚 Выберите номер задания ЕГЭ по математике:",
-        reply_markup=keyboard
+        "📚 Выберите номер задания ЕГЭ по математике:", reply_markup=keyboard
     )
 
 
@@ -81,46 +111,113 @@ async def handle_task_selection(message: Message, state: FSMContext):
     await state.update_data(task_number=task_number)
 
     task_id = get_random_task_id(int(task_number))
-    problem_info = get_problem_info('math', f'{task_id}')
+    problem_info = get_problem_info("math", f"{task_id}")
 
     print(problem_info)
 
     solution_keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="✅ Получить решение")],
-            [KeyboardButton(text="🔁 Выбрать другое задание")]
+            [KeyboardButton(text="🔁 Выбрать другое задание")],
         ],
         resize_keyboard=True,
-        one_time_keyboard=True
+        one_time_keyboard=True,
     )
 
     await message.answer(
-        f"📝 Задание №{task_number}:\n\n{problem_info["condition_clean"]}",
-        reply_markup=solution_keyboard
+        f"📝 Задание №{task_number}:\n\n{problem_info['condition_clean']}",
+        reply_markup=solution_keyboard,
     )
-    # for i in range(len(problem_info["images_task"])):
-    #     await message.answer_photo(problem_info["images_task"][i])
 
-    await message.answer_photo(photo="https://ege.sdamgia.ru/formula/svg/4c/4ca5f4f7e94e31f4c6172328a3396f5a.svg")
-    # image_tasks_jpg = get_image_tasks_jpg(problem_info["images_task"])
-    # for i in range(len(image_tasks_jpg)):
-    #     await message.answer_photo(image_tasks_jpg[i])
+    image_tasks = problem_info["images_task"]
+    print(image_tasks)
+    for i in range(len(image_tasks)):
+        svg_coded_string = image_to_base64(image_tasks[i])
+        try:
+            # Декодируем base64 SVG
+            svg_bytes = base64.b64decode(svg_coded_string)
+
+            # Конвертируем SVG в PNG
+            png_bytes = io.BytesIO()
+            cairosvg.svg2png(bytestring=svg_bytes, write_to=png_bytes)
+            png_bytes.seek(0)
+
+            # Отправляем PNG как фото
+            await bot.send_photo(
+                chat_id=message.from_user.id,
+                photo=BufferedInputFile(png_bytes.getvalue(), filename="image.png"),
+            )
+        except Exception as e:
+            await message.reply(f"Произошла ошибка при отправке изображения: {e}")
 
     await state.set_state(TaskStates.waiting_for_solution)
     await state.update_data(problem_info=problem_info)
 
 
+@dp.message(Command(commands="test"))
+@check_registration
+async def test(message: Message, state: FSMContext):
+    svg_coded_string = image_to_base64(
+        "https://ege.sdamgia.ru/formula/svg/71/71be21f76a77293c9ecbc4ab250b4c16.svg"
+    )
+    # svg_coded_string = image_to_base64("https://math-ege.sdamgia.ru/get_file?id=20487")
+
+    try:
+        # Декодируем base64 SVG
+        svg_bytes = base64.b64decode(svg_coded_string)
+
+        # Конвертируем SVG в PNG
+        png_bytes = io.BytesIO()
+        cairosvg.svg2png(bytestring=svg_bytes, write_to=png_bytes)
+        png_bytes.seek(0)
+
+        # Отправляем PNG как фото
+        await bot.send_photo(
+            chat_id=message.from_user.id,
+            photo=BufferedInputFile(png_bytes.getvalue(), filename="image.png"),
+        )
+        await message.reply(
+            "SVG изображение успешно конвертировано и отправлено как PNG!"
+        )
+
+    except Exception as e:
+        await message.reply(f"Произошла ошибка при отправке изображения: {e}")
+
+
 @dp.message(F.text == "✅ Получить решение", TaskStates.waiting_for_solution)
 async def handle_solution_request(message: Message, state: FSMContext):
     data = await state.get_data()
-    task_number = data.get('task_number')
-    problem_info = data.get('problem_info')
+    task_number = data.get("task_number")
+    problem_info = data.get("problem_info")
 
     await message.answer(
-        f"✅ Решение для задания №{task_number}:\n\n{problem_info["solution_clean"]}",
-        reply_markup=ReplyKeyboardRemove()
+        f"✅ Решение для задания №{task_number}:\n\n{problem_info['solution_clean']}",
+        reply_markup=ReplyKeyboardRemove(),
     )
+    solution_tasks = problem_info["images_solution"]
+
+    print(solution_tasks)
+    for i in range(len(solution_tasks)):
+        svg_coded_string = image_to_base64(solution_tasks[i])
+        try:
+            # Декодируем base64 SVG
+            svg_bytes = base64.b64decode(svg_coded_string)
+
+            # Конвертируем SVG в PNG
+            png_bytes = io.BytesIO()
+            cairosvg.svg2png(bytestring=svg_bytes, write_to=png_bytes)
+            png_bytes.seek(0)
+
+            # Отправляем PNG как фото
+            await bot.send_photo(
+                chat_id=message.from_user.id,
+                photo=BufferedInputFile(png_bytes.getvalue(), filename="image.png"),
+            )
+        except Exception as e:
+            await message.reply(f"Произошла ошибка при отправке изображения: {e}")
+
     await state.clear()
+    await state.update_data(problem_info=problem_info)
 
 
 @dp.message(F.text == "🔁 Выбрать другое задание", TaskStates.waiting_for_solution)
@@ -133,25 +230,21 @@ async def handle_change_task(message: Message, state: FSMContext):
             [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
             [KeyboardButton(text=str(i)) for i in math_task_numbers[10:15]],
             [KeyboardButton(text=str(i)) for i in math_task_numbers[15:19]],
-            [KeyboardButton(text="Отмена")]
+            [KeyboardButton(text="Отмена")],
         ],
         resize_keyboard=True,
-        one_time_keyboard=True
+        one_time_keyboard=True,
     )
 
     await message.answer(
-        "📚 Выберите номер задания ЕГЭ по математике:",
-        reply_markup=keyboard
+        "📚 Выберите номер задания ЕГЭ по математике:", reply_markup=keyboard
     )
 
 
 @dp.message(F.text == "Отмена")
 async def handle_cancel(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer(
-        "Выбор задания отменен",
-        reply_markup=ReplyKeyboardRemove()
-    )
+    await message.answer("Выбор задания отменен", reply_markup=ReplyKeyboardRemove())
 
 
 @dp.message(Command(commands="registration"))
@@ -162,9 +255,11 @@ async def command_registration_handler(message: Message, state: FSMContext):
         query = select(Student).filter_by(tg_id=message.from_user.id)
         result = await session.execute(query)
         student_data = result.scalars().one_or_none()
-        if (student_data):
+        if student_data:
             await state.clear()
-            await message.answer('Вы уже зарегистрированы, если хотите изменить свои данные, используйте /change_my_data')
+            await message.answer(
+                "Вы уже зарегистрированы, если хотите изменить свои данные, используйте /change_my_data"
+            )
             return
 
     await state.set_state(RegisterStudentState.get_student_name)
@@ -179,12 +274,16 @@ async def get_email_student(message: Message, state: FSMContext):
     name_parts = message.text.split()
 
     if len(name_parts) < 3:
-        await message.answer("❌ Пожалуйста, введите полное ФИО через пробел (Фамилия Имя Отчество)")
+        await message.answer(
+            "❌ Пожалуйста, введите полное ФИО через пробел (Фамилия Имя Отчество)"
+        )
         return
 
     for part in name_parts:
         if not NAME_PATTERN.fullmatch(part):
-            await message.answer("❌ ФИО может содержать только буквы, дефисы и пробелы")
+            await message.answer(
+                "❌ ФИО может содержать только буквы, дефисы и пробелы"
+            )
             return
 
     await state.update_data(student_name=message.text)
@@ -207,7 +306,9 @@ async def get_phone_student(message: Message, state: FSMContext):
 @dp.message(RegisterStudentState.get_student_phone_number)
 async def final_of_registration(message: Message, state: FSMContext):
     # Валидация и нормализация номера телефона
-    phone = message.text.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+    phone = (
+        message.text.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+    )
 
     if not PHONE_PATTERN.fullmatch(phone):
         await message.answer("❌ Пожалуйста, введите корректный номер телефона")
@@ -230,7 +331,7 @@ async def final_of_registration(message: Message, state: FSMContext):
     user_data = await state.get_data()
 
     # Разделение ФИО на компоненты
-    name_parts = user_data['student_name'].split()
+    name_parts = user_data["student_name"].split()
     last_name = name_parts[0]
     first_name = name_parts[1]
     patronymic = " ".join(name_parts[2:]) if len(name_parts) > 2 else ""
@@ -242,8 +343,8 @@ async def final_of_registration(message: Message, state: FSMContext):
                 last_name=last_name,
                 first_name=first_name,
                 patronymic=patronymic,
-                email=user_data['student_email'],
-                number_phone=user_data['student_phone'],
+                email=user_data["student_email"],
+                number_phone=user_data["student_phone"],
             )
             await session.execute(stmt_student_add)
             await session.commit()
@@ -256,7 +357,9 @@ async def final_of_registration(message: Message, state: FSMContext):
             f"Теперь можешь пользоваться всеми функциями!"
         )
     except Exception as e:
-        await message.answer("❌ Произошла ошибка при сохранении данных. Попробуйте позже.")
+        await message.answer(
+            "❌ Произошла ошибка при сохранении данных. Попробуйте позже."
+        )
     finally:
         await state.clear()
 
@@ -265,13 +368,14 @@ async def final_of_registration(message: Message, state: FSMContext):
 @check_registration
 async def command_registration_handler(message: Message):
     async with async_session_maker() as session:
-        query = select(Student)
+        query = select(Student).filter_by(tg_id=message.from_user.id)
         result = await session.execute(query)
-        student_data = result.scalars().one()
-
+        student_data = result.scalars().one_or_none()
+    if not (student_data):
+        return
     await message.answer(
         f"Ваши данные:\n"
-        f"👤 ФИО: {student_data.last_name + " " + student_data.first_name + " " + student_data.patronymic}\n"
+        f"👤 ФИО: {student_data.last_name + ' ' + student_data.first_name + ' ' + student_data.patronymic}\n"
         f"📧 Email: {student_data.email}\n"
         f"📞 Телефон: {student_data.number_phone}\n"
     )
@@ -285,9 +389,7 @@ async def command_change_my_data_handler(message: Message, state: FSMContext):
         query = delete(Student).where(Student.tg_id == message.from_user.id)
         await session.execute(query)
         await session.commit()
-    await message.answer(
-        "Необходимо заново пройти регистрацию по команде /register"
-    )
+    await message.answer("Необходимо заново пройти регистрацию по команде /register")
 
 
 @dp.message()

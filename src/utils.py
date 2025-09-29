@@ -23,4 +23,3 @@ def check_registration(handler):
             )
 
     return wrapper
-

@@ -4,8 +4,6 @@ import re
 
 import cairosvg
 from aiogram import Dispatcher, F, Bot
-from aiogram.methods.send_photo import SendPhoto
-from aiogram.methods import SendPhoto
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -112,8 +110,6 @@ async def handle_task_selection(message: Message, state: FSMContext):
 
     task_id = get_random_task_id(int(task_number))
     problem_info = get_problem_info("math", f"{task_id}")
-
-    print(problem_info)
 
     solution_keyboard = ReplyKeyboardMarkup(
         keyboard=[

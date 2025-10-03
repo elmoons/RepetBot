@@ -129,7 +129,7 @@ async def handle_task_selection(message: Message, state: FSMContext):
     )
 
     image_tasks = problem_info["images_task"]
-    print(image_tasks)
+    # print(image_tasks)
     for i in range(len(image_tasks)):
         svg_coded_string = image_to_base64(image_tasks[i])
         try:
@@ -175,7 +175,7 @@ async def handle_solution_request(message: Message, state: FSMContext):
     )
     solution_tasks = problem_info["images_solution"]
 
-    print(solution_tasks)
+    # print(solution_tasks)
     for i in range(len(solution_tasks)):
         svg_coded_string = image_to_base64(solution_tasks[i])
         try:

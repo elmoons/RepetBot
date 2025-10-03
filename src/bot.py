@@ -105,6 +105,7 @@ async def command_test_handler(message: Message):
 
 
 @dp.message(F.text.in_(math_task_numbers))
+@check_registration
 async def handle_task_selection(message: Message, state: FSMContext):
     task_number = message.text
 
@@ -153,6 +154,7 @@ async def handle_task_selection(message: Message, state: FSMContext):
 
 
 @dp.message(F.text == "✅ Получить решение", TaskStates.waiting_for_solution)
+@check_registration
 async def handle_solution_request(message: Message, state: FSMContext):
     data = await state.get_data()
     task_number = data.get("task_number")
@@ -198,10 +200,13 @@ async def handle_solution_request(message: Message, state: FSMContext):
 
 
 @dp.message(F.text == "▶️ Следующее задание")
+@check_registration
 async def handle_new_task_request(message: Message):
     await command_test_handler(message)
 
+
 @dp.message(F.text == "🔁 Выбрать другое задание", TaskStates.waiting_for_solution)
+@check_registration
 async def handle_change_task(message: Message, state: FSMContext):
     await state.clear()
 
@@ -223,6 +228,7 @@ async def handle_change_task(message: Message, state: FSMContext):
 
 
 @dp.message(F.text == "Отмена")
+@check_registration
 async def handle_cancel(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Выбор задания отменен", reply_markup=ReplyKeyboardRemove())

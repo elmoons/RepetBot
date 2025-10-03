@@ -58,9 +58,9 @@ async def command_start_handler(message: Message):
 async def command_get_info_handler(message: Message):
     await message.answer("""
     💡Этот бот поможет тебе готовиться к экзаменам пр математике формата ОГЭ и ЕГЭ. 
-🕖Он сэкономит твое время, ведь тебе нет необходимости в поиске подходящих заданий для подготовки. 
-👊Он является твоим тренером; с его помощью ты сможешь расширить свои способности и кругозор разнообразия заданий экзамена.
-""")
+    🕖Он сэкономит твое время, ведь тебе нет необходимости в поиске подходящих заданий для подготовки. 
+    👊Он является твоим тренером; с его помощью ты сможешь расширить свои способности и кругозор разнообразия заданий экзамена.
+    """)
 
 
 math_task_numbers = [
@@ -125,7 +125,7 @@ async def handle_task_selection(message: Message, state: FSMContext):
     )
 
     await message.answer(
-        f"📝 Задание №{task_number} ({problem_info["id_of_task"]}):\n\n{problem_info['condition_clean']}",
+        f"📝 Задание №{task_number} ({problem_info['id_of_task']}):\n\n{problem_info['condition_clean']}",
         reply_markup=solution_keyboard,
     )
 
@@ -160,9 +160,18 @@ async def handle_solution_request(message: Message, state: FSMContext):
     task_number = data.get("task_number")
     problem_info = data.get("problem_info")
 
+    # Клавиатура с кнопкой для нового задания
+    new_task_keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="▶️ Следующее задание")],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
+
     await message.answer(
-        f"✅ Решение для задания №{task_number} ({problem_info["id_of_task"]}):\n\n{problem_info['solution_clean']}",
-        reply_markup=ReplyKeyboardRemove(),
+        f"✅ Решение для задания №{task_number} ({problem_info['id_of_task']}):\n\n{problem_info['solution_clean']}",
+        reply_markup=new_task_keyboard,
     )
     solution_tasks = problem_info["images_solution"]
 
@@ -182,13 +191,18 @@ async def handle_solution_request(message: Message, state: FSMContext):
             await bot.send_photo(
                 chat_id=message.from_user.id,
                 photo=BufferedInputFile(png_bytes.getvalue(), filename="image.png"),
+                reply_markup=new_task_keyboard,
             )
         except Exception as e:
             await message.reply(f"Произошла ошибка при отправке изображения: {e}")
 
     await state.clear()
-    await state.update_data(problem_info=problem_info)
 
+
+@dp.message(F.text == "▶️ Следующее задание")
+async def handle_new_task_request(message: Message):
+    # Вызываем ту же функцию, что и для /generate_task
+    await command_test_handler(message)
 
 @dp.message(F.text == "🔁 Выбрать другое задание", TaskStates.waiting_for_solution)
 async def handle_change_task(message: Message, state: FSMContext):

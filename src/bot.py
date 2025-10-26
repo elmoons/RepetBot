@@ -134,7 +134,7 @@ async def handle_task_selection(message: Message, state: FSMContext):
         try:
             # Отправляем PNG как фото
             svg_bytes = base64.b64decode(svg_coded_string)
-            final_png = svg_to_telegram_png(svg_bytes, target_size=(300, 200))
+            final_png = svg_to_telegram_png(svg_bytes, target_size=(400, 300))
 
             await bot.send_photo(
                 chat_id=message.from_user.id,
@@ -176,7 +176,7 @@ async def handle_solution_request(message: Message, state: FSMContext):
         try:
             # Отправляем PNG как фото
             svg_bytes = base64.b64decode(svg_coded_string)
-            final_png = svg_to_telegram_png(svg_bytes, target_size=(300, 200))
+            final_png = svg_to_telegram_png(svg_bytes, target_size=(400, 300))
 
             await bot.send_photo(
                 chat_id=message.from_user.id,

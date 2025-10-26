@@ -18,7 +18,7 @@ from aiogram.types import (
 from sqlalchemy import insert, select, delete
 
 from src.config import settings
-from src.convert_images import image_to_base64
+from src.convert_images import image_to_base64, svg_to_telegram_png
 from src.database.database import async_session_maker
 from src.database.models import Student
 from src.parse_tasks import get_problem_info, get_random_task_id
@@ -112,6 +112,7 @@ async def handle_task_selection(message: Message, state: FSMContext):
     await state.update_data(task_number=task_number)
 
     task_id = get_random_task_id(int(task_number))
+
     problem_info = get_problem_info("math", f"{task_id}")
 
     solution_keyboard = ReplyKeyboardMarkup(
@@ -142,10 +143,14 @@ async def handle_task_selection(message: Message, state: FSMContext):
             png_bytes.seek(0)
 
             # Отправляем PNG как фото
+            svg_bytes = base64.b64decode(svg_coded_string)
+            final_png = svg_to_telegram_png(svg_bytes, target_size=(300, 200))
+
             await bot.send_photo(
                 chat_id=message.from_user.id,
-                photo=BufferedInputFile(png_bytes.getvalue(), filename="image.png"),
+                photo=BufferedInputFile(final_png.getvalue(), filename="image.png"),
             )
+
         except Exception as e:
             await message.reply(f"Произошла ошибка при отправке изображения: {e}")
 
@@ -188,9 +193,12 @@ async def handle_solution_request(message: Message, state: FSMContext):
             png_bytes.seek(0)
 
             # Отправляем PNG как фото
+            svg_bytes = base64.b64decode(svg_coded_string)
+            final_png = svg_to_telegram_png(svg_bytes, target_size=(300, 200))
+
             await bot.send_photo(
                 chat_id=message.from_user.id,
-                photo=BufferedInputFile(png_bytes.getvalue(), filename="image.png"),
+                photo=BufferedInputFile(final_png.getvalue(), filename="image.png"),
                 reply_markup=new_task_keyboard,
             )
         except Exception as e:

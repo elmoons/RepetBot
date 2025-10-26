@@ -108,11 +108,9 @@ async def command_test_handler(message: Message):
 @check_registration
 async def handle_task_selection(message: Message, state: FSMContext):
     task_number = message.text
-
     await state.update_data(task_number=task_number)
 
     task_id = get_random_task_id(int(task_number))
-
     problem_info = get_problem_info("math", f"{task_id}")
 
     solution_keyboard = ReplyKeyboardMarkup(
@@ -134,14 +132,6 @@ async def handle_task_selection(message: Message, state: FSMContext):
     for i in range(len(image_tasks)):
         svg_coded_string = image_to_base64(image_tasks[i])
         try:
-            # Декодируем base64 SVG
-            svg_bytes = base64.b64decode(svg_coded_string)
-
-            # Конвертируем SVG в PNG
-            png_bytes = io.BytesIO()
-            cairosvg.svg2png(bytestring=svg_bytes, write_to=png_bytes)
-            png_bytes.seek(0)
-
             # Отправляем PNG как фото
             svg_bytes = base64.b64decode(svg_coded_string)
             final_png = svg_to_telegram_png(svg_bytes, target_size=(300, 200))
@@ -184,14 +174,6 @@ async def handle_solution_request(message: Message, state: FSMContext):
     for i in range(len(solution_tasks)):
         svg_coded_string = image_to_base64(solution_tasks[i])
         try:
-            # Декодируем base64 SVG
-            svg_bytes = base64.b64decode(svg_coded_string)
-
-            # Конвертируем SVG в PNG
-            png_bytes = io.BytesIO()
-            cairosvg.svg2png(bytestring=svg_bytes, write_to=png_bytes)
-            png_bytes.seek(0)
-
             # Отправляем PNG как фото
             svg_bytes = base64.b64decode(svg_coded_string)
             final_png = svg_to_telegram_png(svg_bytes, target_size=(300, 200))

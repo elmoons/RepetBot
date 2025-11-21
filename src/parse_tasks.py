@@ -1,5 +1,5 @@
 import random
-from sdamgia import SdamGIA
+from src.sdam_gia.sdam_gia import SdamGIA
 
 
 def clean_sdamgia_text(text: str) -> str:
@@ -8,8 +8,8 @@ def clean_sdamgia_text(text: str) -> str:
     return " ".join(cleaned.split())
 
 
-def get_problem_info(subject: str, problem_id: str):
-    sdamgia = SdamGIA()
+def get_problem_info(exam: str, subject: str, problem_id: str):
+    sdamgia = SdamGIA(exam)
 
     result = sdamgia.get_problem_by_id(subject, problem_id)
     id_of_task = result["id"]
@@ -33,7 +33,9 @@ def get_problem_info(subject: str, problem_id: str):
     return data_task
 
 
-# print(get_problem_info('math', '27245'))
+# print(get_problem_info('oge','math', '366647'))
+# print(get_problem_info('ege','mathb', '77334'))
+# print(get_problem_info('ege', 'math', '27245'))
 
 
 def get_random_category_by_number(number_of_task: int):

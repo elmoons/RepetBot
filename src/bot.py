@@ -1,8 +1,6 @@
 import base64
-import io
 import re
 
-import cairosvg
 from aiogram import Dispatcher, F, Bot
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
@@ -22,7 +20,7 @@ from src.convert_images import image_to_base64, svg_to_telegram_png
 from src.database.database import async_session_maker
 from src.database.models import Student
 from src.parse_tasks import get_problem_info, get_random_task_id
-from src.utils import check_registration
+from src.utils import check_registration, math_task_numbers
 
 # Регулярные выражения для валидации
 NAME_PATTERN = re.compile(r"^[а-яёa-z\- ]{2,}$", re.IGNORECASE)
@@ -40,6 +38,7 @@ class RegisterStudentState(StatesGroup):
     get_student_name = State()
     get_student_email = State()
     get_student_phone_number = State()
+    get_student_target_exam = State()
 
 
 class TaskStates(StatesGroup):
@@ -61,32 +60,10 @@ async def command_get_info_handler(message: Message):
 👊Он является твоим тренером; с его помощью ты сможешь расширить свои способности и кругозор разнообразия заданий экзамена.""")
 
 
-math_task_numbers = [
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "11",
-    "12",
-    "13",
-    "14",
-    "15",
-    "16",
-    "17",
-    "18",
-    "19",
-]
-
-
 @dp.message(Command(commands="generate_task"))
 @check_registration
-async def command_test_handler(message: Message):
+async def command_test_handler(message: Message, state: FSMContext):
+    await state.clear()
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
@@ -235,7 +212,7 @@ async def command_registration_handler(message: Message, state: FSMContext):
         if student_data:
             await state.clear()
             await message.answer(
-                "Вы уже зарегистрированы, если хотите изменить свои данные, используйте /change_my_data"
+                "Вы уже зарегистрированы, если хотите изменить свои данные или вид экзамена, используйте /change_my_data"
             )
             return
 
@@ -281,7 +258,7 @@ async def get_phone_student(message: Message, state: FSMContext):
 
 
 @dp.message(RegisterStudentState.get_student_phone_number)
-async def final_of_registration(message: Message, state: FSMContext):
+async def get_phone_student(message: Message, state: FSMContext):
     # Валидация и нормализация номера телефона
     phone = (
         message.text.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
@@ -305,14 +282,42 @@ async def final_of_registration(message: Message, state: FSMContext):
         return
 
     await state.update_data(student_phone=phone)
+
+    exam_selection_keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="ЕГЭ Математика Профильная")],
+            [KeyboardButton(text="ЕГЭ Математика Базовая")],
+            [KeyboardButton(text="ОГЭ Математика")],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
+
+    await message.answer("Выбери тип экзамена:", reply_markup=exam_selection_keyboard)
+    await state.set_state(RegisterStudentState.get_student_target_exam)
+
+
+@dp.message(RegisterStudentState.get_student_target_exam)
+async def get_target_exam_student(message: Message, state: FSMContext):
+    exam_type = message.text.strip()
+    print(exam_type)
+    valid_exams = [
+        "ЕГЭ Математика Профильная",
+        "ЕГЭ Математика Базовая",
+        "ОГЭ Математика",
+    ]
+
+    if exam_type not in valid_exams:
+        await message.answer("❌ Пожалуйста, выбери экзамен с клавиатуры")
+        return
+    await state.update_data(student_exam=exam_type)
     user_data = await state.get_data()
 
-    # Разделение ФИО на компоненты
     name_parts = user_data["student_name"].split()
     last_name = name_parts[0]
     first_name = name_parts[1]
     patronymic = " ".join(name_parts[2:]) if len(name_parts) > 2 else ""
-
+    print(user_data)
     try:
         async with async_session_maker() as session:
             stmt_student_add = insert(Student).values(
@@ -322,6 +327,7 @@ async def final_of_registration(message: Message, state: FSMContext):
                 patronymic=patronymic,
                 email=user_data["student_email"],
                 number_phone=user_data["student_phone"],
+                type_of_exam=user_data["student_exam"]
             )
             await session.execute(stmt_student_add)
             await session.commit()
@@ -331,19 +337,22 @@ async def final_of_registration(message: Message, state: FSMContext):
             f"👤 ФИО: {user_data['student_name']}\n"
             f"📧 Email: {user_data['student_email']}\n"
             f"📞 Телефон: {user_data['student_phone']}\n"
+            f"📑 Экзамен: {user_data['student_exam']}\n"
             f"Теперь можешь пользоваться всеми функциями!"
         )
     except Exception as e:
         await message.answer(
             "❌ Произошла ошибка при сохранении данных. Попробуйте позже."
         )
+        print(e)
     finally:
         await state.clear()
 
 
 @dp.message(Command(commands="get_me"))
 @check_registration
-async def command_registration_handler(message: Message):
+async def command_registration_handler(message: Message, state: FSMContext):
+    await state.clear()
     async with async_session_maker() as session:
         query = select(Student).filter_by(tg_id=message.from_user.id)
         result = await session.execute(query)
@@ -355,6 +364,7 @@ async def command_registration_handler(message: Message):
         f"👤 ФИО: {student_data.last_name + ' ' + student_data.first_name + ' ' + student_data.patronymic}\n"
         f"📧 Email: {student_data.email}\n"
         f"📞 Телефон: {student_data.number_phone}\n"
+        f"📑 Экзамен: {student_data.type_of_exam}"
     )
 
 
@@ -371,7 +381,8 @@ async def command_change_my_data_handler(message: Message, state: FSMContext):
 
 @dp.message()
 @check_registration
-async def handle_unknown_message(message: Message):
+async def handle_unknown_message(message: Message, state: FSMContext):
+    await state.clear()
     await message.answer(
         "Я не понимаю это сообщение. Пожалуйста, используй команды из меню."
     )

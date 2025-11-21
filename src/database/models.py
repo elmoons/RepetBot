@@ -11,3 +11,4 @@ class Student(BaseOrm):
     patronymic: Mapped[str] = mapped_column()
     email: Mapped[str] = mapped_column(unique=True)
     number_phone: Mapped[str] = mapped_column(unique=True)
+    type_of_exam: Mapped[str] = mapped_column()

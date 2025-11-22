@@ -68,7 +68,14 @@ async def command_get_info_handler(message: Message):
 @check_registration
 async def command_test_handler(message: Message, state: FSMContext):
     await state.clear()
-    keyboard = ReplyKeyboardMarkup(
+
+    async with async_session_maker() as session:
+        query = select(Student).filter_by(tg_id=message.from_user.id)
+        result = await session.execute(query)
+        student_data = result.scalars().one_or_none()
+        exam = student_data.type_of_exam
+
+    keyboard_math_prof = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
             [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
@@ -80,16 +87,61 @@ async def command_test_handler(message: Message, state: FSMContext):
         one_time_keyboard=True,
     )
 
-    await message.answer(
-        "📚 Выберите номер задания ЕГЭ по математике:", reply_markup=keyboard
+    keyboard_math_base = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[10:15]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[15:21]],
+            [KeyboardButton(text="Отмена")],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True,
     )
 
+    keyboard_math_oge = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[10:15]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[15:20]],
+            [KeyboardButton(text=str(i)) for i in math_task_numbers[20:25]],
+            [KeyboardButton(text="Отмена")],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
+
+    if exam == "ЕГЭ Математика Профильная":
+        await message.answer(
+            "📚 Выберите номер задания ЕГЭ Математика Профильная:", reply_markup=keyboard_math_prof
+        )
+    elif exam == "ЕГЭ Математика Базовая":
+        await message.answer(
+            "📚 Выберите номер задания ЕГЭ Математика Базовая:", reply_markup=keyboard_math_base
+        )
+    elif exam == "ОГЭ Математика":
+        await message.answer(
+            "📚 Выберите номер задания ОГЭ Математика:", reply_markup=keyboard_math_oge
+        )
 
 @dp.message(F.text.in_(math_task_numbers))
 @check_registration
 async def handle_task_selection(message: Message, state: FSMContext):
     task_number = message.text
     await state.update_data(task_number=task_number)
+
+    async with async_session_maker() as session:
+        query = select(Student).filter_by(tg_id=message.from_user.id)
+        result = await session.execute(query)
+        student_data = result.scalars().one_or_none()
+        exam = student_data.type_of_exam
+
+    # if exam == "ЕГЭ Математика Профильная":
+    #
+    # elif exam == "ЕГЭ Математика Базовая":
+    #
+    # elif exam == "ОГЭ Математика":
 
     task_id = get_random_task_id(int(task_number))
     problem_info = get_problem_info("math", f"{task_id}")
@@ -109,7 +161,6 @@ async def handle_task_selection(message: Message, state: FSMContext):
     )
 
     image_tasks = problem_info["images_task"]
-    # print(image_tasks)
     for i in range(len(image_tasks)):
         svg_coded_string = image_to_base64(image_tasks[i])
         try:

@@ -196,21 +196,26 @@ async def handle_new_task_request(message: Message):
 async def handle_change_task(message: Message, state: FSMContext):
     await state.clear()
 
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[10:15]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[15:19]],
-            [KeyboardButton(text="Отмена")],
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True,
-    )
+    async with async_session_maker() as session:
+        query = select(Student).filter_by(tg_id=message.from_user.id)
+        result = await session.execute(query)
+        student_data = result.scalars().one_or_none()
+        exam = student_data.type_of_exam
 
-    await message.answer(
-        "📚 Выберите номер задания ЕГЭ по математике:", reply_markup=keyboard
-    )
+    if exam == "ЕГЭ Математика Профильная":
+        await message.answer(
+            "📚 Выберите номер задания ЕГЭ Математика Профильная:",
+            reply_markup=keyboard_math_prof,
+        )
+    elif exam == "ЕГЭ Математика Базовая":
+        await message.answer(
+            "📚 Выберите номер задания ЕГЭ Математика Базовая:",
+            reply_markup=keyboard_math_base,
+        )
+    elif exam == "ОГЭ Математика":
+        await message.answer(
+            "📚 Выберите номер задания ОГЭ Математика:", reply_markup=keyboard_math_oge
+        )
 
 
 @dp.message(F.text == "Отмена")

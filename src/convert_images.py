@@ -23,6 +23,7 @@ from PIL import Image
 import io
 import cairosvg
 
+
 def svg_to_telegram_png(svg_bytes, target_size=(800, 800)):
     # Конвертируем SVG в PNG
     png_bytes = io.BytesIO()

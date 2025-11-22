@@ -7,30 +7,29 @@ from os import path, remove
 
 
 class SdamGIA:
-    def __init__(self, exam='ege'):
+    def __init__(self, exam="ege"):
         """
         :param exam: 'ege' или 'oge'
         """
         self.exam = exam.lower()
-        self._BASE_DOMAIN = 'sdamgia.ru'
+        self._BASE_DOMAIN = "sdamgia.ru"
 
         self._SUBJECT_BASE_URL = {
-            'math':  f'https://math-{self.exam}.{self._BASE_DOMAIN}',
-            'mathb': f'https://mathb-{self.exam}.{self._BASE_DOMAIN}',
-            'phys':  f'https://phys-{self.exam}.{self._BASE_DOMAIN}',
-            'inf':   f'https://inf-{self.exam}.{self._BASE_DOMAIN}',
-            'rus':   f'https://rus-{self.exam}.{self._BASE_DOMAIN}',
-            'bio':   f'https://bio-{self.exam}.{self._BASE_DOMAIN}',
-            'chem':  f'https://chem-{self.exam}.{self._BASE_DOMAIN}',
-            'geo':   f'https://geo-{self.exam}.{self._BASE_DOMAIN}',
-            'soc':   f'https://soc-{self.exam}.{self._BASE_DOMAIN}',
-            'hist':  f'https://hist-{self.exam}.{self._BASE_DOMAIN}',
-            'en':    f'https://en-{self.exam}.{self._BASE_DOMAIN}',
-            'de':    f'https://de-{self.exam}.{self._BASE_DOMAIN}',
-            'fr':    f'https://fr-{self.exam}.{self._BASE_DOMAIN}',
-            'lit':   f'https://lit-{self.exam}.{self._BASE_DOMAIN}',
+            "math": f"https://math-{self.exam}.{self._BASE_DOMAIN}",
+            "mathb": f"https://mathb-{self.exam}.{self._BASE_DOMAIN}",
+            "phys": f"https://phys-{self.exam}.{self._BASE_DOMAIN}",
+            "inf": f"https://inf-{self.exam}.{self._BASE_DOMAIN}",
+            "rus": f"https://rus-{self.exam}.{self._BASE_DOMAIN}",
+            "bio": f"https://bio-{self.exam}.{self._BASE_DOMAIN}",
+            "chem": f"https://chem-{self.exam}.{self._BASE_DOMAIN}",
+            "geo": f"https://geo-{self.exam}.{self._BASE_DOMAIN}",
+            "soc": f"https://soc-{self.exam}.{self._BASE_DOMAIN}",
+            "hist": f"https://hist-{self.exam}.{self._BASE_DOMAIN}",
+            "en": f"https://en-{self.exam}.{self._BASE_DOMAIN}",
+            "de": f"https://de-{self.exam}.{self._BASE_DOMAIN}",
+            "fr": f"https://fr-{self.exam}.{self._BASE_DOMAIN}",
+            "lit": f"https://lit-{self.exam}.{self._BASE_DOMAIN}",
         }
-
 
     def _get_base(self, subject):
         """Проверка и возврат правильной ссылки для предмета"""
@@ -38,53 +37,88 @@ class SdamGIA:
             raise ValueError(f"Неверный предмет '{subject}' для {self.exam.upper()}")
         return self._SUBJECT_BASE_URL[subject]
 
-    def get_problem_by_id(self, subject, id, img=None, path_to_img=None, path_to_html='', grabzit_auth=None):
+    def get_problem_by_id(
+        self,
+        subject,
+        id,
+        img=None,
+        path_to_img=None,
+        path_to_html="",
+        grabzit_auth=None,
+    ):
         base_url = self._get_base(subject)
-        page = requests.get(f'{base_url}/problem?id={id}')
-        soup = BeautifulSoup(page.content, 'html.parser')
+        page = requests.get(f"{base_url}/problem?id={id}")
+        soup = BeautifulSoup(page.content, "html.parser")
 
-        probBlock = soup.find('div', {'class': 'prob_maindiv'})
+        probBlock = soup.find("div", {"class": "prob_maindiv"})
         if probBlock is None:
             return None
 
-        for i in probBlock.find_all('img'):
-            if not 'sdamgia.ru' in i['src']:
-                i['src'] = base_url + i['src']
+        for i in probBlock.find_all("img"):
+            if not "sdamgia.ru" in i["src"]:
+                i["src"] = base_url + i["src"]
 
-        URL = f'{base_url}/problem?id={id}'
+        URL = f"{base_url}/problem?id={id}"
         try:
-            TOPIC_ID = ' '.join(probBlock.find('span', {'class': 'prob_nums'}).text.split()[1:][:-2])
+            TOPIC_ID = " ".join(
+                probBlock.find("span", {"class": "prob_nums"}).text.split()[1:][:-2]
+            )
         except Exception:
-            TOPIC_ID = ''
+            TOPIC_ID = ""
 
-        CONDITION, SOLUTION, ANSWER, ANALOGS = {}, {}, '', []
-
-        try:
-            CONDITION = {'text': probBlock.find_all('div', {'class': 'pbody'})[0].text,
-                         'images': [i['src'] for i in probBlock.find_all('div', {'class': 'pbody'})[0].find_all('img')]}
-        except Exception:
-            pass
+        CONDITION, SOLUTION, ANSWER, ANALOGS = {}, {}, "", []
 
         try:
-            SOLUTION = {'text': probBlock.find_all('div', {'class': 'pbody'})[1].text,
-                        'images': [i['src'] for i in probBlock.find_all('div', {'class': 'pbody'})[1].find_all('img')]}
-        except Exception:
-            pass
-
-        try:
-            ANSWER = probBlock.find('div', {'class': 'answer'}).text.replace('Ответ: ', '')
+            CONDITION = {
+                "text": probBlock.find_all("div", {"class": "pbody"})[0].text,
+                "images": [
+                    i["src"]
+                    for i in probBlock.find_all("div", {"class": "pbody"})[0].find_all(
+                        "img"
+                    )
+                ],
+            }
         except Exception:
             pass
 
         try:
-            ANALOGS = [i.text for i in probBlock.find('div', {'class': 'minor'}).find_all('a')]
-            if 'Все' in ANALOGS:
-                ANALOGS.remove('Все')
+            SOLUTION = {
+                "text": probBlock.find_all("div", {"class": "pbody"})[1].text,
+                "images": [
+                    i["src"]
+                    for i in probBlock.find_all("div", {"class": "pbody"})[1].find_all(
+                        "img"
+                    )
+                ],
+            }
         except Exception:
             pass
 
-        return {'id': id, 'topic': TOPIC_ID, 'condition': CONDITION, 'solution': SOLUTION,
-                'answer': ANSWER, 'analogs': ANALOGS, 'url': URL}
+        try:
+            ANSWER = probBlock.find("div", {"class": "answer"}).text.replace(
+                "Ответ: ", ""
+            )
+        except Exception:
+            pass
+
+        try:
+            ANALOGS = [
+                i.text for i in probBlock.find("div", {"class": "minor"}).find_all("a")
+            ]
+            if "Все" in ANALOGS:
+                ANALOGS.remove("Все")
+        except Exception:
+            pass
+
+        return {
+            "id": id,
+            "topic": TOPIC_ID,
+            "condition": CONDITION,
+            "solution": SOLUTION,
+            "answer": ANSWER,
+            "analogs": ANALOGS,
+            "url": URL,
+        }
 
     def search(self, subject, request, page=1):
         """
@@ -100,9 +134,12 @@ class SdamGIA:
         :type page: int
         """
         doujin_page = requests.get(
-            f'{self._SUBJECT_BASE_URL[subject]}/search?search={request}&page={str(page)}')
-        soup = BeautifulSoup(doujin_page.content, 'html.parser')
-        return [i.text.split()[-1] for i in soup.find_all('span', {'class': 'prob_nums'})]
+            f"{self._SUBJECT_BASE_URL[subject]}/search?search={request}&page={str(page)}"
+        )
+        soup = BeautifulSoup(doujin_page.content, "html.parser")
+        return [
+            i.text.split()[-1] for i in soup.find_all("span", {"class": "prob_nums"})
+        ]
 
     def get_test_by_id(self, subject, testid):
         """
@@ -115,9 +152,12 @@ class SdamGIA:
         :type testid: str
         """
         doujin_page = requests.get(
-            f'{self._SUBJECT_BASE_URL[subject]}/test?id={testid}')
-        soup = BeautifulSoup(doujin_page.content, 'html.parser')
-        return [i.text.split()[-1] for i in soup.find_all('span', {'class': 'prob_nums'})]
+            f"{self._SUBJECT_BASE_URL[subject]}/test?id={testid}"
+        )
+        soup = BeautifulSoup(doujin_page.content, "html.parser")
+        return [
+            i.text.split()[-1] for i in soup.find_all("span", {"class": "prob_nums"})
+        ]
 
     def get_category_by_id(self, subject, categoryid, page=1):
         """
@@ -134,9 +174,12 @@ class SdamGIA:
         """
 
         doujin_page = requests.get(
-            f'{self._SUBJECT_BASE_URL[subject]}/test?&filter=all&theme={categoryid}&page={page}')
-        soup = BeautifulSoup(doujin_page.content, 'html.parser')
-        return [i.text.split()[-1] for i in soup.find_all('span', {'class': 'prob_nums'})]
+            f"{self._SUBJECT_BASE_URL[subject]}/test?&filter=all&theme={categoryid}&page={page}"
+        )
+        soup = BeautifulSoup(doujin_page.content, "html.parser")
+        return [
+            i.text.split()[-1] for i in soup.find_all("span", {"class": "prob_nums"})
+        ]
 
     def get_catalog(self, subject):
         """
@@ -146,27 +189,24 @@ class SdamGIA:
         :type subject: str
         """
 
-        doujin_page = requests.get(
-            f'{self._SUBJECT_BASE_URL[subject]}/prob_catalog')
-        soup = BeautifulSoup(doujin_page.content, 'html.parser')
+        doujin_page = requests.get(f"{self._SUBJECT_BASE_URL[subject]}/prob_catalog")
+        soup = BeautifulSoup(doujin_page.content, "html.parser")
         catalog = []
         CATALOG = []
 
-        for i in soup.find_all('div', {'class': 'cat_category'}):
+        for i in soup.find_all("div", {"class": "cat_category"}):
             try:
-                i['data-id']
+                i["data-id"]
             except:
                 catalog.append(i)
 
         for topic in catalog[1:]:
-            TOPIC_NAME = topic.find(
-                'b', {'class': 'cat_name'}).text.split('. ')[1]
-            TOPIC_ID = topic.find(
-                'b', {'class': 'cat_name'}).text.split('. ')[0]
-            if TOPIC_ID[0] == ' ':
+            TOPIC_NAME = topic.find("b", {"class": "cat_name"}).text.split(". ")[1]
+            TOPIC_ID = topic.find("b", {"class": "cat_name"}).text.split(". ")[0]
+            if TOPIC_ID[0] == " ":
                 TOPIC_ID = TOPIC_ID[2:]
-            if TOPIC_ID.find('Задания ') == 0:
-                TOPIC_ID = TOPIC_ID.replace('Задания ', '')
+            if TOPIC_ID.find("Задания ") == 0:
+                TOPIC_ID = TOPIC_ID.replace("Задания ", "")
 
             CATALOG.append(
                 dict(
@@ -174,12 +214,13 @@ class SdamGIA:
                     topic_name=TOPIC_NAME,
                     categories=[
                         dict(
-                            category_id=i['data-id'],
-                            category_name=i.find(
-                                'a', {'class': 'cat_name'}).text
+                            category_id=i["data-id"],
+                            category_name=i.find("a", {"class": "cat_name"}).text,
                         )
-                        for i in
-                        topic.find('div', {'class': 'cat_children'}).find_all('div', {'class': 'cat_category'})]
+                        for i in topic.find("div", {"class": "cat_children"}).find_all(
+                            "div", {"class": "cat_category"}
+                        )
+                    ],
                 )
             )
 
@@ -200,20 +241,40 @@ class SdamGIA:
         """
 
         if problems is None:
-            problems = {'full': 1}
+            problems = {"full": 1}
 
-        if 'full' in problems:
-            dif = {f'prob{i}': problems['full'] for i in range(
-                1, len(self.get_catalog(subject)) + 1)}
+        if "full" in problems:
+            dif = {
+                f"prob{i}": problems["full"]
+                for i in range(1, len(self.get_catalog(subject)) + 1)
+            }
         else:
-            dif = {f'prob{i}': problems[i] for i in problems}
+            dif = {f"prob{i}": problems[i] for i in problems}
 
-        return requests.get(f'{self._SUBJECT_BASE_URL[subject]}/test?a=generate', dif,
-                            allow_redirects=False).headers['location'].split('id=')[1].split('&nt')[0]
+        return (
+            requests.get(
+                f"{self._SUBJECT_BASE_URL[subject]}/test?a=generate",
+                dif,
+                allow_redirects=False,
+            )
+            .headers["location"]
+            .split("id=")[1]
+            .split("&nt")[0]
+        )
 
-    def generate_pdf(self, subject, testid, solution='', nums='',
-                     answers='', key='', crit='',
-                     instruction='', col='', pdf=True):
+    def generate_pdf(
+        self,
+        subject,
+        testid,
+        solution="",
+        nums="",
+        answers="",
+        key="",
+        crit="",
+        instruction="",
+        col="",
+        pdf=True,
+    ):
         """
         Генерирует pdf версию теста
 
@@ -255,16 +316,21 @@ class SdamGIA:
 
         def a(a):
             if a == False:
-                return ''
+                return ""
             return a
 
-        return self._SUBJECT_BASE_URL[subject] + requests.get(f'{self._SUBJECT_BASE_URL[subject]}/test?'
-                                                              f'id={testid}&print=true&pdf={pdf}&sol={a(solution)}&num={a(nums)}&ans={a(answers)}'
-                                                              f'&key={a(key)}&crit={a(crit)}&pre={a(instruction)}&dcol={a(col)}',
-                                                              allow_redirects=False).headers['location']
+        return (
+            self._SUBJECT_BASE_URL[subject]
+            + requests.get(
+                f"{self._SUBJECT_BASE_URL[subject]}/test?"
+                f"id={testid}&print=true&pdf={pdf}&sol={a(solution)}&num={a(nums)}&ans={a(answers)}"
+                f"&key={a(key)}&crit={a(crit)}&pre={a(instruction)}&dcol={a(col)}",
+                allow_redirects=False,
+            ).headers["location"]
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sdamgia = SdamGIA()
-    test = sdamgia.get_problem_by_id('math', '505452')
+    test = sdamgia.get_problem_by_id("math", "505452")
     # print(test)

@@ -1,5 +1,4 @@
 import base64
-import re
 
 from aiogram import Dispatcher, F, Bot
 from aiogram.filters import CommandStart, Command
@@ -19,16 +18,14 @@ from src.config import settings
 from src.convert_images import image_to_base64, svg_to_telegram_png
 from src.database.database import async_session_maker
 from src.database.models import Student
-from src.parse_tasks import get_problem_info, get_random_task_id
-from src.utils import check_registration, math_task_numbers
-
-# Регулярные выражения для валидации
-NAME_PATTERN = re.compile(r"^[а-яёa-z\- ]{2,}$", re.IGNORECASE)
-EMAIL_PATTERN = re.compile(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$", re.IGNORECASE)
-PHONE_PATTERN = re.compile(
-    r"^(\+7|7|8)?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$"
+from src.keyboards import (
+    math_task_numbers,
+    keyboard_math_oge,
+    keyboard_math_base,
+    keyboard_math_prof,
 )
-
+from src.parse_tasks import get_problem_info, get_random_task_id
+from src.utils import check_registration, NAME_PATTERN, EMAIL_PATTERN, PHONE_PATTERN
 
 dp = Dispatcher(storage=MemoryStorage())
 bot = Bot(token=settings.BOT_TOKEN)
@@ -50,17 +47,18 @@ async def command_start_handler(message: Message):
     await message.answer(
         f"Привет! Этот бот содержит задания ОГЭ/ЕГЭ по Математике!\n"
         f"Список команд находится в меню!",
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove(),
     )
 
 
 @dp.message(Command(commands="get_info"))
 async def command_get_info_handler(message: Message):
-    await message.answer("""
+    await message.answer(
+        """
         💡Этот бот поможет тебе готовиться к экзаменам пр математике формата ОГЭ и ЕГЭ. 
         🕖Он сэкономит твое время, ведь тебе нет необходимости в поиске подходящих заданий для подготовки. 
         👊Он является твоим тренером; с его помощью ты сможешь расширить свои способности и кругозор разнообразия заданий экзамена.""",
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove(),
     )
 
 
@@ -75,55 +73,21 @@ async def command_test_handler(message: Message, state: FSMContext):
         student_data = result.scalars().one_or_none()
         exam = student_data.type_of_exam
 
-    keyboard_math_prof = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[10:15]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[15:19]],
-            [KeyboardButton(text="Отмена")],
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True,
-    )
-
-    keyboard_math_base = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[10:15]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[15:21]],
-            [KeyboardButton(text="Отмена")],
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True,
-    )
-
-    keyboard_math_oge = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[10:15]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[15:20]],
-            [KeyboardButton(text=str(i)) for i in math_task_numbers[20:25]],
-            [KeyboardButton(text="Отмена")],
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True,
-    )
-
     if exam == "ЕГЭ Математика Профильная":
         await message.answer(
-            "📚 Выберите номер задания ЕГЭ Математика Профильная:", reply_markup=keyboard_math_prof
+            "📚 Выберите номер задания ЕГЭ Математика Профильная:",
+            reply_markup=keyboard_math_prof,
         )
     elif exam == "ЕГЭ Математика Базовая":
         await message.answer(
-            "📚 Выберите номер задания ЕГЭ Математика Базовая:", reply_markup=keyboard_math_base
+            "📚 Выберите номер задания ЕГЭ Математика Базовая:",
+            reply_markup=keyboard_math_base,
         )
     elif exam == "ОГЭ Математика":
         await message.answer(
             "📚 Выберите номер задания ОГЭ Математика:", reply_markup=keyboard_math_oge
         )
+
 
 @dp.message(F.text.in_(math_task_numbers))
 @check_registration
@@ -268,13 +232,14 @@ async def command_registration_handler(message: Message, state: FSMContext):
             await state.clear()
             await message.answer(
                 "Вы уже зарегистрированы, если хотите изменить свои данные или вид экзамена, используйте /change_my_data",
-                reply_markup=ReplyKeyboardRemove())
+                reply_markup=ReplyKeyboardRemove(),
+            )
             return
 
     await state.set_state(RegisterStudentState.get_student_name)
     await message.answer(
         "Привет, давай знакомиться! Напиши ФИО (Например: Иванов Иван Иванович).",
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove(),
     )
 
 
@@ -381,7 +346,7 @@ async def get_target_exam_student(message: Message, state: FSMContext):
                 patronymic=patronymic,
                 email=user_data["student_email"],
                 number_phone=user_data["student_phone"],
-                type_of_exam=user_data["student_exam"]
+                type_of_exam=user_data["student_exam"],
             )
             await session.execute(stmt_student_add)
             await session.commit()
@@ -393,11 +358,13 @@ async def get_target_exam_student(message: Message, state: FSMContext):
             f"📞 Телефон: {user_data['student_phone']}\n"
             f"📑 Экзамен: {user_data['student_exam']}\n"
             f"Теперь можешь пользоваться всеми функциями!",
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=ReplyKeyboardRemove(),
         )
     except Exception as e:
         await message.answer(
-            "❌ Произошла ошибка при сохранении данных. Попробуйте позже.", reply_markup=ReplyKeyboardRemove())
+            "❌ Произошла ошибка при сохранении данных. Попробуйте позже.",
+            reply_markup=ReplyKeyboardRemove(),
+        )
     finally:
         await state.clear()
 
@@ -418,7 +385,7 @@ async def command_registration_handler(message: Message, state: FSMContext):
         f"📧 Email: {student_data.email}\n"
         f"📞 Телефон: {student_data.number_phone}\n"
         f"📑 Экзамен: {student_data.type_of_exam}",
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove(),
     )
 
 
@@ -430,7 +397,10 @@ async def command_change_my_data_handler(message: Message, state: FSMContext):
         query = delete(Student).where(Student.tg_id == message.from_user.id)
         await session.execute(query)
         await session.commit()
-    await message.answer("Необходимо заново пройти регистрацию по команде /registration", reply_markup=ReplyKeyboardRemove())
+    await message.answer(
+        "Необходимо заново пройти регистрацию по команде /registration",
+        reply_markup=ReplyKeyboardRemove(),
+    )
 
 
 @dp.message()
@@ -439,5 +409,5 @@ async def handle_unknown_message(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
         "Я не понимаю это сообщение. Пожалуйста, используй команды из меню.",
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove(),
     )

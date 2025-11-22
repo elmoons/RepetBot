@@ -2,8 +2,6 @@
 
 from bs4 import BeautifulSoup
 import requests
-import threading
-from os import path, remove
 
 
 class SdamGIA:
@@ -332,5 +330,3 @@ class SdamGIA:
 
 if __name__ == "__main__":
     sdamgia = SdamGIA()
-    test = sdamgia.get_problem_by_id("math", "505452")
-    # print(test)

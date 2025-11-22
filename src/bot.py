@@ -24,6 +24,16 @@ from src.keyboards import (
     keyboard_math_base,
     keyboard_math_prof,
 )
+from src.messages import (
+    unknown_message,
+    change_my_data_message,
+    generate_get_me_message,
+    start_message,
+    get_info_message,
+    select_task_number_ege_math_prof_message,
+    select_task_number_ege_math_base_message,
+    select_task_number_oge_math_base_message,
+)
 from src.parse_tasks import get_problem_info, get_random_task_id
 from src.utils import check_registration, NAME_PATTERN, EMAIL_PATTERN, PHONE_PATTERN
 
@@ -44,22 +54,12 @@ class TaskStates(StatesGroup):
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message):
-    await message.answer(
-        f"Привет! Этот бот содержит задания ОГЭ/ЕГЭ по Математике!\n"
-        f"Список команд находится в меню!",
-        reply_markup=ReplyKeyboardRemove(),
-    )
+    await message.answer(start_message, reply_markup=ReplyKeyboardRemove())
 
 
 @dp.message(Command(commands="get_info"))
 async def command_get_info_handler(message: Message):
-    await message.answer(
-        """
-        💡Этот бот поможет тебе готовиться к экзаменам пр математике формата ОГЭ и ЕГЭ. 
-        🕖Он сэкономит твое время, ведь тебе нет необходимости в поиске подходящих заданий для подготовки. 
-        👊Он является твоим тренером; с его помощью ты сможешь расширить свои способности и кругозор разнообразия заданий экзамена.""",
-        reply_markup=ReplyKeyboardRemove(),
-    )
+    await message.answer(get_info_message, reply_markup=ReplyKeyboardRemove())
 
 
 @dp.message(Command(commands="generate_task"))
@@ -75,17 +75,17 @@ async def command_test_handler(message: Message, state: FSMContext):
 
     if exam == "ЕГЭ Математика Профильная":
         await message.answer(
-            "📚 Выберите номер задания ЕГЭ Математика Профильная:",
+            select_task_number_ege_math_prof_message,
             reply_markup=keyboard_math_prof,
         )
     elif exam == "ЕГЭ Математика Базовая":
         await message.answer(
-            "📚 Выберите номер задания ЕГЭ Математика Базовая:",
+            select_task_number_ege_math_base_message,
             reply_markup=keyboard_math_base,
         )
     elif exam == "ОГЭ Математика":
         await message.answer(
-            "📚 Выберите номер задания ОГЭ Математика:", reply_markup=keyboard_math_oge
+            select_task_number_oge_math_base_message, reply_markup=keyboard_math_oge
         )
 
 
@@ -151,7 +151,6 @@ async def handle_solution_request(message: Message, state: FSMContext):
     task_number = data.get("task_number")
     problem_info = data.get("problem_info")
 
-    # Клавиатура с кнопкой для нового задания
     new_task_keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="▶️ Следующее задание")],
@@ -204,17 +203,17 @@ async def handle_change_task(message: Message, state: FSMContext):
 
     if exam == "ЕГЭ Математика Профильная":
         await message.answer(
-            "📚 Выберите номер задания ЕГЭ Математика Профильная:",
+            select_task_number_ege_math_prof_message,
             reply_markup=keyboard_math_prof,
         )
     elif exam == "ЕГЭ Математика Базовая":
         await message.answer(
-            "📚 Выберите номер задания ЕГЭ Математика Базовая:",
+            select_task_number_ege_math_base_message,
             reply_markup=keyboard_math_base,
         )
     elif exam == "ОГЭ Математика":
         await message.answer(
-            "📚 Выберите номер задания ОГЭ Математика:", reply_markup=keyboard_math_oge
+            select_task_number_oge_math_base_message, reply_markup=keyboard_math_oge
         )
 
 
@@ -381,15 +380,16 @@ async def command_registration_handler(message: Message, state: FSMContext):
     async with async_session_maker() as session:
         query = select(Student).filter_by(tg_id=message.from_user.id)
         result = await session.execute(query)
-        student_data = result.scalars().one_or_none()
-    if not (student_data):
-        return
+        student_data = result.scalars().one()
     await message.answer(
-        f"Ваши данные:\n"
-        f"👤 ФИО: {student_data.last_name + ' ' + student_data.first_name + ' ' + student_data.patronymic}\n"
-        f"📧 Email: {student_data.email}\n"
-        f"📞 Телефон: {student_data.number_phone}\n"
-        f"📑 Экзамен: {student_data.type_of_exam}",
+        generate_get_me_message(
+            student_data.last_name,
+            student_data.first_name,
+            student_data.patronymic,
+            student_data.email,
+            student_data.number_phone,
+            student_data.type_of_exam,
+        ),
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -402,17 +402,11 @@ async def command_change_my_data_handler(message: Message, state: FSMContext):
         query = delete(Student).where(Student.tg_id == message.from_user.id)
         await session.execute(query)
         await session.commit()
-    await message.answer(
-        "Необходимо заново пройти регистрацию по команде /registration",
-        reply_markup=ReplyKeyboardRemove(),
-    )
+    await message.answer(change_my_data_message, reply_markup=ReplyKeyboardRemove())
 
 
 @dp.message()
 @check_registration
 async def handle_unknown_message(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer(
-        "Я не понимаю это сообщение. Пожалуйста, используй команды из меню.",
-        reply_markup=ReplyKeyboardRemove(),
-    )
+    await message.answer(unknown_message, reply_markup=ReplyKeyboardRemove())

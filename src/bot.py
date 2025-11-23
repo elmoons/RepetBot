@@ -39,10 +39,10 @@ from src.messages import (
     registration_error,
     generate_registration_completed_message,
     select_exam_error_message,
-    select_exam_message,
+    select_exam_message, get_user_name_message, already_register_message,
 )
 from src.parse_tasks import get_problem_info, get_random_task_id
-from src.utils import check_registration, NAME_PATTERN, EMAIL_PATTERN, PHONE_PATTERN
+from src.utils import check_registration, NAME_PATTERN, EMAIL_PATTERN, PHONE_PATTERN, VALID_EXAMS
 
 dp = Dispatcher(storage=MemoryStorage())
 bot = Bot(token=settings.BOT_TOKEN)
@@ -223,22 +223,15 @@ async def command_registration_handler(message: Message, state: FSMContext):
         student_data = result.scalars().one_or_none()
         if student_data:
             await state.clear()
-            await message.answer(
-                "Вы уже зарегистрированы, если хотите изменить свои данные или вид экзамена, используйте /change_my_data",
-                reply_markup=ReplyKeyboardRemove(),
-            )
+            await message.answer(already_register_message, reply_markup=ReplyKeyboardRemove())
             return
 
     await state.set_state(RegisterStudentState.get_student_name)
-    await message.answer(
-        "Привет, давай знакомиться! Напиши ФИО (Например: Иванов Иван Иванович).",
-        reply_markup=ReplyKeyboardRemove(),
-    )
+    await message.answer(get_user_name_message, reply_markup=ReplyKeyboardRemove())
 
 
 @dp.message(RegisterStudentState.get_student_name)
 async def get_email_student(message: Message, state: FSMContext):
-    # Валидация ФИО
     name_parts = message.text.split()
 
     if len(name_parts) < 3:
@@ -304,13 +297,8 @@ async def get_phone_student(message: Message, state: FSMContext):
 @dp.message(RegisterStudentState.get_student_target_exam)
 async def get_target_exam_student(message: Message, state: FSMContext):
     exam_type = message.text.strip()
-    valid_exams = [
-        "ЕГЭ Математика Профильная",
-        "ЕГЭ Математика Базовая",
-        "ОГЭ Математика",
-    ]
 
-    if exam_type not in valid_exams:
+    if exam_type not in VALID_EXAMS:
         await message.answer(select_exam_error_message)
         return
     await state.update_data(student_exam=exam_type)

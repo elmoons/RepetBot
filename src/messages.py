@@ -19,13 +19,17 @@ select_task_number_ege_math_base_message = (
 
 select_task_number_oge_math_base_message = "📚 Выберите номер задания ОГЭ Математика:"
 
-change_my_data_message = "Необходимо заново пройти регистрацию по команде /registration"
+get_user_name_message = "Привет, давай знакомиться! Напиши ФИО (Например: Иванов Иван Иванович)."
+
+already_register_message = "Вы уже зарегистрированы, если хотите изменить свои данные или вид экзамена, используйте /change_my_data"
 
 select_exam_message = "Выбери тип экзамена:"
 
 select_exam_error_message = "❌ Пожалуйста, выбери экзамен с клавиатуры"
 
 registration_error = "❌ Произошла ошибка при сохранении данных. Попробуйте позже."
+
+change_my_data_message = "Необходимо заново пройти регистрацию по команде /registration"
 
 unknown_message = "Я не понимаю это сообщение. Пожалуйста, используй команды из меню."
 

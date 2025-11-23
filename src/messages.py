@@ -23,19 +23,44 @@ cancel_task_message = "Выбор задания отменен"
 
 send_image_error_message = "Произошла ошибка при отправке изображения"
 
+
+def generate_task_condition_message(task_number, id_of_task, condition_clean):
+    return f"📝 Задание №{task_number} ({id_of_task}):\n\n{condition_clean}"
+
+
+def generate_task_solution_message(task_number, id_of_task, solution_clean):
+    return f"✅ Решение для задания №{task_number} ({id_of_task}):\n\n{solution_clean}"
+
+
 get_user_name_message = (
     "Привет, давай знакомиться! Напиши ФИО (Например: Иванов Иван Иванович)."
 )
 
+user_full_name_error_message = (
+    "❌ Пожалуйста, введите полное ФИО через пробел (Фамилия Имя Отчество)"
+)
+
+user_name_symbols_error_message = (
+    "❌ ФИО может содержать только буквы, дефисы и пробелы"
+)
+
 get_user_phone_message = "Напишите мне свой номер телефона"
 
-already_register_message = "Вы уже зарегистрированы, если хотите изменить свои данные или вид экзамена, используйте /change_my_data"
+user_phone_correct_error_message = "❌ Пожалуйста, введите корректный номер телефона"
+
+user_phone_len_error_message = "❌ Номер телефона должен содержать 11 цифр"
+
+get_user_email_message = "Напишите мне свою электронную почту!"
+
+user_email_error_message = "❌ Пожалуйста, введите корректный email адрес"
 
 select_exam_message = "Выбери тип экзамена:"
 
 select_exam_error_message = "❌ Пожалуйста, выбери экзамен с клавиатуры"
 
 registration_error = "❌ Произошла ошибка при сохранении данных. Попробуйте позже."
+
+already_register_message = "Вы уже зарегистрированы, если хотите изменить свои данные или вид экзамена, используйте /change_my_data"
 
 change_my_data_message = "Необходимо заново пройти регистрацию по команде /registration"
 

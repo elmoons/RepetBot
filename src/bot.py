@@ -43,6 +43,14 @@ from src.messages import (
     cancel_task_message,
     get_user_phone_message,
     send_image_error_message,
+    generate_task_condition_message,
+    generate_task_solution_message,
+    get_user_email_message,
+    user_email_error_message,
+    user_name_correct_error_message,
+    user_full_name_error_message,
+    user_phone_len_error_message,
+    user_phone_correct_error_message,
 )
 from src.parse_tasks import get_problem_info, get_random_task_id
 from src.utils import (
@@ -127,7 +135,9 @@ async def handle_task_selection(message: Message, state: FSMContext):
     problem_info = get_problem_info("math", f"{task_id}")
 
     await message.answer(
-        f"📝 Задание №{task_number} ({problem_info['id_of_task']}):\n\n{problem_info['condition_clean']}",
+        generate_task_condition_message(
+            task_number, problem_info["id_of_task"], problem_info["condition_clean"]
+        ),
         reply_markup=solution_keyboard,
     )
 
@@ -158,7 +168,9 @@ async def handle_solution_request(message: Message, state: FSMContext):
     problem_info = data.get("problem_info")
 
     await message.answer(
-        f"✅ Решение для задания №{task_number} ({problem_info['id_of_task']}):\n\n{problem_info['solution_clean']}",
+        generate_task_solution_message(
+            task_number, problem_info["id_of_task"], problem_info["solution_clean"]
+        ),
         reply_markup=new_task_keyboard,
     )
     solution_tasks = problem_info["images_solution"]
@@ -244,28 +256,23 @@ async def get_email_student(message: Message, state: FSMContext):
     name_parts = message.text.split()
 
     if len(name_parts) < 3:
-        await message.answer(
-            "❌ Пожалуйста, введите полное ФИО через пробел (Фамилия Имя Отчество)"
-        )
+        await message.answer(user_full_name_error_message)
         return
 
     for part in name_parts:
         if not NAME_PATTERN.fullmatch(part):
-            await message.answer(
-                "❌ ФИО может содержать только буквы, дефисы и пробелы"
-            )
+            await message.answer(user_name_correct_error_message)
             return
 
     await state.update_data(student_name=message.text)
-    await message.answer("Напишите мне свою электронную почту!")
+    await message.answer(get_user_email_message)
     await state.set_state(RegisterStudentState.get_student_email)
 
 
 @dp.message(RegisterStudentState.get_student_email)
 async def get_phone_student(message: Message, state: FSMContext):
-    # Валидация email
     if not EMAIL_PATTERN.fullmatch(message.text):
-        await message.answer("❌ Пожалуйста, введите корректный email адрес")
+        await message.answer(user_email_error_message)
         return
 
     await state.update_data(student_email=message.text)
@@ -280,7 +287,7 @@ async def get_phone_student(message: Message, state: FSMContext):
     )
 
     if not PHONE_PATTERN.fullmatch(phone):
-        await message.answer("❌ Пожалуйста, введите корректный номер телефона")
+        await message.answer(user_phone_correct_error_message)
         return
 
     if phone.startswith("8"):
@@ -291,7 +298,7 @@ async def get_phone_student(message: Message, state: FSMContext):
         phone = "+7" + phone
 
     if len(phone) != 12:
-        await message.answer("❌ Номер телефона должен содержать 11 цифр")
+        await message.answer(user_phone_len_error_message)
         return
 
     await state.update_data(student_phone=phone)

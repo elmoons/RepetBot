@@ -343,11 +343,19 @@ async def get_target_exam_student(message: Message, state: FSMContext):
             await session.commit()
 
         await message.answer(
-            generate_registration_completed_message(),
+            generate_registration_completed_message(
+                last_name,
+                first_name,
+                patronymic,
+                user_data["student_email"],
+                user_data["student_phone"],
+                user_data["student_exam"],
+            ),
             reply_markup=ReplyKeyboardRemove(),
         )
-    except Exception:
+    except Exception as e:
         await message.answer(registration_error, reply_markup=ReplyKeyboardRemove())
+        print(e)
     finally:
         await state.clear()
 

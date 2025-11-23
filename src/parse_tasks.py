@@ -1,5 +1,5 @@
 import random
-from src.sdam_gia.sdam_gia import SdamGIA
+from src.sdam_gia import SdamGIA
 
 
 def clean_sdamgia_text(text: str) -> str:

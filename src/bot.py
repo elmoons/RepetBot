@@ -7,8 +7,6 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
     Message,
-    KeyboardButton,
-    ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     BufferedInputFile,
 )
@@ -39,10 +37,21 @@ from src.messages import (
     registration_error,
     generate_registration_completed_message,
     select_exam_error_message,
-    select_exam_message, get_user_name_message, already_register_message,
+    select_exam_message,
+    get_user_name_message,
+    already_register_message,
+    cancel_task_message,
+    get_user_phone_message,
+    send_image_error_message,
 )
 from src.parse_tasks import get_problem_info, get_random_task_id
-from src.utils import check_registration, NAME_PATTERN, EMAIL_PATTERN, PHONE_PATTERN, VALID_EXAMS
+from src.utils import (
+    check_registration,
+    NAME_PATTERN,
+    EMAIL_PATTERN,
+    PHONE_PATTERN,
+    VALID_EXAMS,
+)
 
 dp = Dispatcher(storage=MemoryStorage())
 bot = Bot(token=settings.BOT_TOKEN)
@@ -126,7 +135,6 @@ async def handle_task_selection(message: Message, state: FSMContext):
     for i in range(len(image_tasks)):
         svg_coded_string = image_to_base64(image_tasks[i])
         try:
-            # Отправляем PNG как фото
             svg_bytes = base64.b64decode(svg_coded_string)
             final_png = svg_to_telegram_png(svg_bytes, target_size=(400, 300))
 
@@ -136,7 +144,7 @@ async def handle_task_selection(message: Message, state: FSMContext):
             )
 
         except Exception:
-            await message.reply(f"Произошла ошибка при отправке изображения")
+            await message.reply(send_image_error_message)
 
     await state.set_state(TaskStates.waiting_for_solution)
     await state.update_data(problem_info=problem_info)
@@ -158,7 +166,6 @@ async def handle_solution_request(message: Message, state: FSMContext):
     for i in range(len(solution_tasks)):
         svg_coded_string = image_to_base64(solution_tasks[i])
         try:
-            # Отправляем PNG как фото
             svg_bytes = base64.b64decode(svg_coded_string)
             final_png = svg_to_telegram_png(svg_bytes, target_size=(400, 300))
 
@@ -168,7 +175,7 @@ async def handle_solution_request(message: Message, state: FSMContext):
                 reply_markup=new_task_keyboard,
             )
         except Exception:
-            await message.reply(f"Произошла ошибка при отправке изображения")
+            await message.reply(send_image_error_message)
 
     await state.clear()
 
@@ -210,7 +217,7 @@ async def handle_change_task(message: Message, state: FSMContext):
 @check_registration
 async def handle_cancel(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("Выбор задания отменен", reply_markup=ReplyKeyboardRemove())
+    await message.answer(cancel_task_message, reply_markup=ReplyKeyboardRemove())
 
 
 @dp.message(Command(commands="registration"))
@@ -223,7 +230,9 @@ async def command_registration_handler(message: Message, state: FSMContext):
         student_data = result.scalars().one_or_none()
         if student_data:
             await state.clear()
-            await message.answer(already_register_message, reply_markup=ReplyKeyboardRemove())
+            await message.answer(
+                already_register_message, reply_markup=ReplyKeyboardRemove()
+            )
             return
 
     await state.set_state(RegisterStudentState.get_student_name)
@@ -248,7 +257,7 @@ async def get_email_student(message: Message, state: FSMContext):
             return
 
     await state.update_data(student_name=message.text)
-    await message.answer("Напиши мне свою электронную почту!")
+    await message.answer("Напишите мне свою электронную почту!")
     await state.set_state(RegisterStudentState.get_student_email)
 
 
@@ -260,13 +269,12 @@ async def get_phone_student(message: Message, state: FSMContext):
         return
 
     await state.update_data(student_email=message.text)
-    await message.answer("Напиши мне свой номер телефона")
+    await message.answer(get_user_phone_message)
     await state.set_state(RegisterStudentState.get_student_phone_number)
 
 
 @dp.message(RegisterStudentState.get_student_phone_number)
 async def get_phone_student(message: Message, state: FSMContext):
-    # Валидация и нормализация номера телефона
     phone = (
         message.text.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
     )
@@ -275,7 +283,6 @@ async def get_phone_student(message: Message, state: FSMContext):
         await message.answer("❌ Пожалуйста, введите корректный номер телефона")
         return
 
-    # Нормализация номера к формату +7XXXXXXXXXX
     if phone.startswith("8"):
         phone = "+7" + phone[1:]
     elif phone.startswith("7"):
@@ -283,7 +290,6 @@ async def get_phone_student(message: Message, state: FSMContext):
     elif not phone.startswith("+"):
         phone = "+7" + phone
 
-    # Проверка длины номера
     if len(phone) != 12:
         await message.answer("❌ Номер телефона должен содержать 11 цифр")
         return

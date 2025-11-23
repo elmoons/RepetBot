@@ -19,7 +19,15 @@ select_task_number_ege_math_base_message = (
 
 select_task_number_oge_math_base_message = "📚 Выберите номер задания ОГЭ Математика:"
 
-get_user_name_message = "Привет, давай знакомиться! Напиши ФИО (Например: Иванов Иван Иванович)."
+cancel_task_message = "Выбор задания отменен"
+
+send_image_error_message = "Произошла ошибка при отправке изображения"
+
+get_user_name_message = (
+    "Привет, давай знакомиться! Напиши ФИО (Например: Иванов Иван Иванович)."
+)
+
+get_user_phone_message = "Напишите мне свой номер телефона"
 
 already_register_message = "Вы уже зарегистрированы, если хотите изменить свои данные или вид экзамена, используйте /change_my_data"
 

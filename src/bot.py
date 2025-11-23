@@ -23,6 +23,9 @@ from src.keyboards import (
     keyboard_math_oge,
     keyboard_math_base,
     keyboard_math_prof,
+    exam_selection_keyboard,
+    solution_keyboard,
+    new_task_keyboard,
 )
 from src.messages import (
     unknown_message,
@@ -33,6 +36,10 @@ from src.messages import (
     select_task_number_ege_math_prof_message,
     select_task_number_ege_math_base_message,
     select_task_number_oge_math_base_message,
+    registration_error,
+    generate_registration_completed_message,
+    select_exam_error_message,
+    select_exam_message,
 )
 from src.parse_tasks import get_problem_info, get_random_task_id
 from src.utils import check_registration, NAME_PATTERN, EMAIL_PATTERN, PHONE_PATTERN
@@ -110,15 +117,6 @@ async def handle_task_selection(message: Message, state: FSMContext):
     task_id = get_random_task_id(int(task_number))
     problem_info = get_problem_info("math", f"{task_id}")
 
-    solution_keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="✅ Получить решение")],
-            [KeyboardButton(text="🔁 Выбрать другое задание")],
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True,
-    )
-
     await message.answer(
         f"📝 Задание №{task_number} ({problem_info['id_of_task']}):\n\n{problem_info['condition_clean']}",
         reply_markup=solution_keyboard,
@@ -137,8 +135,8 @@ async def handle_task_selection(message: Message, state: FSMContext):
                 photo=BufferedInputFile(final_png.getvalue(), filename="image.png"),
             )
 
-        except Exception as e:
-            await message.reply(f"Произошла ошибка при отправке изображения: {e}")
+        except Exception:
+            await message.reply(f"Произошла ошибка при отправке изображения")
 
     await state.set_state(TaskStates.waiting_for_solution)
     await state.update_data(problem_info=problem_info)
@@ -151,21 +149,12 @@ async def handle_solution_request(message: Message, state: FSMContext):
     task_number = data.get("task_number")
     problem_info = data.get("problem_info")
 
-    new_task_keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="▶️ Следующее задание")],
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True,
-    )
-
     await message.answer(
         f"✅ Решение для задания №{task_number} ({problem_info['id_of_task']}):\n\n{problem_info['solution_clean']}",
         reply_markup=new_task_keyboard,
     )
     solution_tasks = problem_info["images_solution"]
 
-    # print(solution_tasks)
     for i in range(len(solution_tasks)):
         svg_coded_string = image_to_base64(solution_tasks[i])
         try:
@@ -178,8 +167,8 @@ async def handle_solution_request(message: Message, state: FSMContext):
                 photo=BufferedInputFile(final_png.getvalue(), filename="image.png"),
                 reply_markup=new_task_keyboard,
             )
-        except Exception as e:
-            await message.reply(f"Произошла ошибка при отправке изображения: {e}")
+        except Exception:
+            await message.reply(f"Произошла ошибка при отправке изображения")
 
     await state.clear()
 
@@ -308,17 +297,7 @@ async def get_phone_student(message: Message, state: FSMContext):
 
     await state.update_data(student_phone=phone)
 
-    exam_selection_keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="ЕГЭ Математика Профильная")],
-            [KeyboardButton(text="ЕГЭ Математика Базовая")],
-            [KeyboardButton(text="ОГЭ Математика")],
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True,
-    )
-
-    await message.answer("Выбери тип экзамена:", reply_markup=exam_selection_keyboard)
+    await message.answer(select_exam_message, reply_markup=exam_selection_keyboard)
     await state.set_state(RegisterStudentState.get_student_target_exam)
 
 
@@ -332,7 +311,7 @@ async def get_target_exam_student(message: Message, state: FSMContext):
     ]
 
     if exam_type not in valid_exams:
-        await message.answer("❌ Пожалуйста, выбери экзамен с клавиатуры")
+        await message.answer(select_exam_error_message)
         return
     await state.update_data(student_exam=exam_type)
     user_data = await state.get_data()
@@ -356,19 +335,11 @@ async def get_target_exam_student(message: Message, state: FSMContext):
             await session.commit()
 
         await message.answer(
-            f"✅ Регистрация завершена!\n"
-            f"👤 ФИО: {user_data['student_name']}\n"
-            f"📧 Email: {user_data['student_email']}\n"
-            f"📞 Телефон: {user_data['student_phone']}\n"
-            f"📑 Экзамен: {user_data['student_exam']}\n"
-            f"Теперь можешь пользоваться всеми функциями!",
+            generate_registration_completed_message(),
             reply_markup=ReplyKeyboardRemove(),
         )
-    except Exception as e:
-        await message.answer(
-            "❌ Произошла ошибка при сохранении данных. Попробуйте позже.",
-            reply_markup=ReplyKeyboardRemove(),
-        )
+    except Exception:
+        await message.answer(registration_error, reply_markup=ReplyKeyboardRemove())
     finally:
         await state.clear()
 

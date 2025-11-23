@@ -21,7 +21,26 @@ select_task_number_oge_math_base_message = "📚 Выберите номер з�
 
 change_my_data_message = "Необходимо заново пройти регистрацию по команде /registration"
 
+select_exam_message = "Выбери тип экзамена:"
+
+select_exam_error_message = "❌ Пожалуйста, выбери экзамен с клавиатуры"
+
+registration_error = "❌ Произошла ошибка при сохранении данных. Попробуйте позже."
+
 unknown_message = "Я не понимаю это сообщение. Пожалуйста, используй команды из меню."
+
+
+def generate_registration_completed_message(
+    last_name, first_name, patronymic, email, number_phone, type_of_exam
+):
+    return (
+        f"""✅ Регистрация завершена!\n
+        👤 ФИО: {last_name + " " + first_name + " " + patronymic}\n
+        📧 Email: {email}\n
+        📞 Телефон: {number_phone}\n
+        📑 Экзамен: {type_of_exam}\n
+        ▶️ Теперь можешь пользоваться всеми функциями!""",
+    )
 
 
 def generate_get_me_message(

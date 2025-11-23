@@ -64,3 +64,30 @@ keyboard_math_oge = ReplyKeyboardMarkup(
     resize_keyboard=True,
     one_time_keyboard=True,
 )
+
+solution_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="✅ Получить решение")],
+        [KeyboardButton(text="🔁 Выбрать другое задание")],
+    ],
+    resize_keyboard=True,
+    one_time_keyboard=True,
+)
+
+new_task_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="▶️ Следующее задание")],
+    ],
+    resize_keyboard=True,
+    one_time_keyboard=True,
+)
+
+exam_selection_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="ЕГЭ Математика Профильная")],
+        [KeyboardButton(text="ЕГЭ Математика Базовая")],
+        [KeyboardButton(text="ОГЭ Математика")],
+    ],
+    resize_keyboard=True,
+    one_time_keyboard=True,
+)

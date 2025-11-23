@@ -62,7 +62,9 @@ def get_random_task_id(exam: str, subject: str, number_of_task: int):
     is_not_emptiness = True
     while is_not_emptiness:
         result = sdamgia.get_category_by_id(
-            subject, get_random_category_by_number(exam, subject, number_of_task), random.randint(1, 5)
+            subject,
+            get_random_category_by_number(exam, subject, number_of_task),
+            random.randint(1, 5),
         )
         if result:
             is_not_emptiness = False

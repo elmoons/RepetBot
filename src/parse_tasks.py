@@ -38,14 +38,13 @@ def get_problem_info(exam: str, subject: str, problem_id: str):
 # print(get_problem_info('ege', 'math', '27245'))
 
 
-def get_random_category_by_number(number_of_task: int):
+def get_random_category_by_number(exam: str, subject: str, number_of_task: int):
     """
     Находит нужный номер задачи и возвращает случайную категорию из него
     Возвращает: (category_id) или None если не найдено
     """
-    sdamgia = SdamGIA()
-    catalog = sdamgia.get_catalog("math")
-    # print(catalog)
+    sdamgia = SdamGIA(exam)
+    catalog = sdamgia.get_catalog(subject)
     target_topic = None
     for topic in catalog:
         if topic["topic_id"] == str(number_of_task):

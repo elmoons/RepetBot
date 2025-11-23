@@ -49,7 +49,8 @@ from src.messages import (
     user_email_error_message,
     user_full_name_error_message,
     user_phone_len_error_message,
-    user_phone_correct_error_message, user_name_symbols_error_message,
+    user_phone_correct_error_message,
+    user_name_symbols_error_message,
 )
 from src.parse_tasks import get_problem_info, get_random_task_id
 from src.utils import (
@@ -76,12 +77,14 @@ class TaskStates(StatesGroup):
 
 
 @dp.message(CommandStart())
-async def command_start_handler(message: Message):
+async def command_start_handler(message: Message, state: FSMContext):
+    await state.clear()
     await message.answer(start_message, reply_markup=ReplyKeyboardRemove())
 
 
 @dp.message(Command(commands="get_info"))
-async def command_get_info_handler(message: Message):
+async def command_get_info_handler(message: Message, state: FSMContext):
+    await state.clear()
     await message.answer(get_info_message, reply_markup=ReplyKeyboardRemove())
 
 
@@ -124,14 +127,19 @@ async def handle_task_selection(message: Message, state: FSMContext):
         student_data = result.scalars().one_or_none()
         exam = student_data.type_of_exam
 
-    # if exam == "ЕГЭ Математика Профильная":
-    #
-    # elif exam == "ЕГЭ Математика Базовая":
-    #
-    # elif exam == "ОГЭ Математика":
+    subject = ""
+    if exam == "ЕГЭ Математика Профильная":
+        exam = "ege"
+        subject = "math"
+    elif exam == "ЕГЭ Математика Базовая":
+        exam = "ege"
+        subject = "mathb"
+    elif exam == "ОГЭ Математика":
+        exam = "oge"
+        subject = "math"
 
-    task_id = get_random_task_id(int(task_number))
-    problem_info = get_problem_info("math", f"{task_id}")
+    task_id = get_random_task_id(exam, subject, int(task_number))
+    problem_info = get_problem_info(exam, subject, f"{task_id}")
 
     await message.answer(
         generate_task_condition_message(
@@ -193,8 +201,8 @@ async def handle_solution_request(message: Message, state: FSMContext):
 
 @dp.message(F.text == "▶️ Следующее задание")
 @check_registration
-async def handle_new_task_request(message: Message):
-    await command_test_handler(message)
+async def handle_new_task_request(message: Message, state: FSMContext):
+    await command_test_handler(message, state)
 
 
 @dp.message(F.text == "🔁 Выбрать другое задание", TaskStates.waiting_for_solution)

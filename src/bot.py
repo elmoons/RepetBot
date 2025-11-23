@@ -47,10 +47,9 @@ from src.messages import (
     generate_task_solution_message,
     get_user_email_message,
     user_email_error_message,
-    user_name_correct_error_message,
     user_full_name_error_message,
     user_phone_len_error_message,
-    user_phone_correct_error_message,
+    user_phone_correct_error_message, user_name_symbols_error_message,
 )
 from src.parse_tasks import get_problem_info, get_random_task_id
 from src.utils import (
@@ -261,7 +260,7 @@ async def get_email_student(message: Message, state: FSMContext):
 
     for part in name_parts:
         if not NAME_PATTERN.fullmatch(part):
-            await message.answer(user_name_correct_error_message)
+            await message.answer(user_name_symbols_error_message)
             return
 
     await state.update_data(student_name=message.text)

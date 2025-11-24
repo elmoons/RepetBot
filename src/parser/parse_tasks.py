@@ -17,11 +17,7 @@ def get_problem_info(exam: str, subject: str, problem_id: str):
     solution_clean = clean_sdamgia_text(result["solution"]["text"])
     images_task = result["condition"]["images"]
     images_solution = result["solution"]["images"]
-    # print(result)
-    # Задача: {result['id']}
-    # Тема: {result['topic']}
-    # Ответ: {result['answer']}
-    # Решение: {solution_clean}
+
     data_task = {
         "id_of_task": id_of_task,
         "condition_clean": condition_clean,
@@ -31,11 +27,6 @@ def get_problem_info(exam: str, subject: str, problem_id: str):
     }
 
     return data_task
-
-
-# print(get_problem_info('oge','math', '366647'))
-# print(get_problem_info('ege','mathb', '77334'))
-# print(get_problem_info('ege', 'math', '27245'))
 
 
 def get_random_category_by_number(exam: str, subject: str, number_of_task: int):

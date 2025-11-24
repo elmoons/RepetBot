@@ -24,14 +24,15 @@ from src.bot.messages import (
     user_phone_len_error_message,
     user_phone_correct_error_message,
     user_name_symbols_error_message,
+    no_registration_message
 )
 from src.bot.keyboards import (
     solution_keyboard,
     new_task_keyboard,
     exam_selection_keyboard,
-    keyboard_math_oge,
-    keyboard_math_base,
-    keyboard_math_prof,
+    math_oge_keyboard,
+    math_base_keyboard,
+    math_prof_keyboard,
     math_task_numbers,
 )
 from src.bot.utils import (

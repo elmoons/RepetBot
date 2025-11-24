@@ -21,9 +21,9 @@ async def main() -> None:
 
     tasks.set_bot(bot)
 
+    dp.include_router(common_router)
     dp.include_router(profile_router)
     dp.include_router(tasks_router)
-    dp.include_router(common_router)
 
     await dp.start_polling(bot)
 

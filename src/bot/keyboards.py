@@ -28,7 +28,7 @@ math_task_numbers = [
     "25",
 ]
 
-keyboard_math_prof = ReplyKeyboardMarkup(
+math_prof_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
         [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
@@ -40,7 +40,7 @@ keyboard_math_prof = ReplyKeyboardMarkup(
     one_time_keyboard=True,
 )
 
-keyboard_math_base = ReplyKeyboardMarkup(
+math_base_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
         [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],
@@ -52,7 +52,7 @@ keyboard_math_base = ReplyKeyboardMarkup(
     one_time_keyboard=True,
 )
 
-keyboard_math_oge = ReplyKeyboardMarkup(
+math_oge_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text=str(i)) for i in math_task_numbers[:5]],
         [KeyboardButton(text=str(i)) for i in math_task_numbers[5:10]],

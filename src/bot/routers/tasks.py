@@ -20,9 +20,9 @@ from src.parser import (
 from src.database import async_session_maker, Student
 from src.bot import (
     math_task_numbers,
-    keyboard_math_oge,
-    keyboard_math_base,
-    keyboard_math_prof,
+    math_oge_keyboard,
+    math_base_keyboard,
+    math_prof_keyboard,
     solution_keyboard,
     new_task_keyboard,
     check_registration,
@@ -62,16 +62,17 @@ async def command_test_handler(message: Message, state: FSMContext):
     if exam == "ЕГЭ Математика Профильная":
         await message.answer(
             select_task_number_ege_math_prof_message,
-            reply_markup=keyboard_math_prof,
+            reply_markup=math_prof_keyboard,
         )
     elif exam == "ЕГЭ Математика Базовая":
         await message.answer(
             select_task_number_ege_math_base_message,
-            reply_markup=keyboard_math_base,
+            reply_markup=math_base_keyboard,
         )
     elif exam == "ОГЭ Математика":
         await message.answer(
-            select_task_number_oge_math_base_message, reply_markup=keyboard_math_oge
+            select_task_number_oge_math_base_message,
+            reply_markup=math_oge_keyboard
         )
 
 
@@ -181,16 +182,17 @@ async def handle_change_task(message: Message, state: FSMContext):
     if exam == "ЕГЭ Математика Профильная":
         await message.answer(
             select_task_number_ege_math_prof_message,
-            reply_markup=keyboard_math_prof,
+            reply_markup=math_prof_keyboard,
         )
     elif exam == "ЕГЭ Математика Базовая":
         await message.answer(
             select_task_number_ege_math_base_message,
-            reply_markup=keyboard_math_base,
+            reply_markup=math_base_keyboard,
         )
     elif exam == "ОГЭ Математика":
         await message.answer(
-            select_task_number_oge_math_base_message, reply_markup=keyboard_math_oge
+            select_task_number_oge_math_base_message,
+            reply_markup=math_oge_keyboard
         )
 
 

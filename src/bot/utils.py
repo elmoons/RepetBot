@@ -4,6 +4,7 @@ from aiogram.types import Message
 from sqlalchemy import select
 
 from src.database import async_session_maker, Student
+from src.bot import no_registration_message
 
 # Регулярные выражения для валидации
 NAME_PATTERN = re.compile(r"^[а-яёa-z\- ]{2,}$", re.IGNORECASE)
@@ -30,9 +31,6 @@ def check_registration(handler):
         if student:
             return await handler(message, *args, **kwargs)
         else:
-            await message.answer(
-                "❌ Перед использованием необходимо зарегистрироваться\n"
-                "👉 Используй команду /registration"
-            )
+            await message.answer(no_registration_message)
 
     return wrapper

@@ -3,8 +3,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
 
-from src.messages import start_message, get_info_message, unknown_message
-from src.utils import check_registration
+from src.bot import start_message, get_info_message, unknown_message, check_registration
 
 common_router = Router()
 

@@ -8,12 +8,9 @@ from aiogram.types import (
 )
 from sqlalchemy import insert, select, delete
 
-from src.database.database import async_session_maker
-from src.database.models import Student
-from src.keyboards import (
-    exam_selection_keyboard,
-)
-from src.messages import (
+from src.database import async_session_maker, Student
+
+from src.bot import (
     change_my_data_message,
     generate_get_me_message,
     registration_error,
@@ -29,9 +26,7 @@ from src.messages import (
     user_phone_len_error_message,
     user_phone_correct_error_message,
     user_name_symbols_error_message,
-)
-
-from src.utils import (
+    exam_selection_keyboard,
     check_registration,
     NAME_PATTERN,
     EMAIL_PATTERN,

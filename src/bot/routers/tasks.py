@@ -11,18 +11,21 @@ from aiogram.types import (
 )
 from sqlalchemy import select
 
-from src.convert_images import image_to_base64, svg_to_telegram_png
-from src.database.database import async_session_maker
-from src.database.models import Student
-from src.keyboards import (
+from src.parser import (
+    image_to_base64,
+    svg_to_telegram_png,
+    get_problem_info,
+    get_random_task_id,
+)
+from src.database import async_session_maker, Student
+from src.bot import (
     math_task_numbers,
     keyboard_math_oge,
     keyboard_math_base,
     keyboard_math_prof,
     solution_keyboard,
     new_task_keyboard,
-)
-from src.messages import (
+    check_registration,
     select_task_number_ege_math_prof_message,
     select_task_number_ege_math_base_message,
     select_task_number_oge_math_base_message,
@@ -30,10 +33,6 @@ from src.messages import (
     send_image_error_message,
     generate_task_condition_message,
     generate_task_solution_message,
-)
-from src.parse_tasks import get_problem_info, get_random_task_id
-from src.utils import (
-    check_registration,
 )
 
 tasks_router = Router()

@@ -3,8 +3,7 @@ from functools import wraps
 from aiogram.types import Message
 from sqlalchemy import select
 
-from src.database.database import async_session_maker
-from src.database.models import Student
+from src.database import async_session_maker, Student
 
 # Регулярные выражения для валидации
 NAME_PATTERN = re.compile(r"^[а-яёa-z\- ]{2,}$", re.IGNORECASE)

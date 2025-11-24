@@ -9,7 +9,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 sys.path.append(str(Path(__file__).parent.parent))
 
 from src.config import settings
-from src.routers import common, profile, tasks
+from src.bot.routers import tasks, common_router, profile_router, tasks_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,9 +21,9 @@ async def main() -> None:
 
     tasks.set_bot(bot)
 
-    dp.include_router(profile.profile_router)
-    dp.include_router(tasks.tasks_router)
-    dp.include_router(common.common_router)
+    dp.include_router(profile_router)
+    dp.include_router(tasks_router)
+    dp.include_router(common_router)
 
     await dp.start_polling(bot)
 

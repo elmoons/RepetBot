@@ -11,7 +11,6 @@ from aiogram.types import (
 )
 from sqlalchemy import select
 
-from src.config import settings
 from src.convert_images import image_to_base64, svg_to_telegram_png
 from src.database.database import async_session_maker
 from src.database.models import Student
@@ -38,7 +37,12 @@ from src.utils import (
 )
 
 tasks_router = Router()
-bot = Bot(token=settings.BOT_TOKEN)
+bot_instance = None
+
+
+def set_bot(bot: Bot):
+    global bot_instance
+    bot_instance = bot
 
 
 class TaskStates(StatesGroup):
@@ -112,7 +116,7 @@ async def handle_task_selection(message: Message, state: FSMContext):
             svg_bytes = base64.b64decode(svg_coded_string)
             final_png = svg_to_telegram_png(svg_bytes, target_size=(400, 300))
 
-            await bot.send_photo(
+            await bot_instance.send_photo(
                 chat_id=message.from_user.id,
                 photo=BufferedInputFile(final_png.getvalue(), filename="image.png"),
             )
@@ -145,7 +149,7 @@ async def handle_solution_request(message: Message, state: FSMContext):
             svg_bytes = base64.b64decode(svg_coded_string)
             final_png = svg_to_telegram_png(svg_bytes, target_size=(400, 300))
 
-            await bot.send_photo(
+            await bot_instance.send_photo(
                 chat_id=message.from_user.id,
                 photo=BufferedInputFile(final_png.getvalue(), filename="image.png"),
                 reply_markup=new_task_keyboard,

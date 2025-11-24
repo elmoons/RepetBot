@@ -19,6 +19,8 @@ async def main() -> None:
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
 
+    tasks.set_bot(bot)
+
     dp.include_router(profile.profile_router)
     dp.include_router(tasks.tasks_router)
     dp.include_router(common.common_router)

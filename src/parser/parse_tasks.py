@@ -1,5 +1,5 @@
 import random
-from src.parser import SdamGIA
+from src.parser.sdam_gia import SdamGIA
 
 
 def clean_sdamgia_text(text: str) -> str:

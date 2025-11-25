@@ -18,10 +18,3 @@ async def command_start_handler(message: Message, state: FSMContext):
 async def command_get_info_handler(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(get_info_message, reply_markup=ReplyKeyboardRemove())
-
-
-@common_router.message()
-@check_registration
-async def handle_unknown_message(message: Message, state: FSMContext):
-    await state.clear()
-    await message.answer(unknown_message, reply_markup=ReplyKeyboardRemove())

@@ -71,8 +71,7 @@ async def command_test_handler(message: Message, state: FSMContext):
         )
     elif exam == "ОГЭ Математика":
         await message.answer(
-            select_task_number_oge_math_base_message,
-            reply_markup=math_oge_keyboard
+            select_task_number_oge_math_base_message, reply_markup=math_oge_keyboard
         )
 
 
@@ -191,8 +190,7 @@ async def handle_change_task(message: Message, state: FSMContext):
         )
     elif exam == "ОГЭ Математика":
         await message.answer(
-            select_task_number_oge_math_base_message,
-            reply_markup=math_oge_keyboard
+            select_task_number_oge_math_base_message, reply_markup=math_oge_keyboard
         )
 
 

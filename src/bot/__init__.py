@@ -24,7 +24,7 @@ from src.bot.messages import (
     user_phone_len_error_message,
     user_phone_correct_error_message,
     user_name_symbols_error_message,
-    no_registration_message
+    no_registration_message,
 )
 from src.bot.keyboards import (
     solution_keyboard,

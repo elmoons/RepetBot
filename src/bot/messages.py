@@ -75,10 +75,25 @@ unknown_message = "Я не понимаю это сообщение. Пожал�
 def generate_registration_completed_message(
     last_name, first_name, patronymic, email, number_phone, type_of_exam
 ):
-    return f"""✅ Регистрация завершена!\n👤 ФИО: {last_name + " " + first_name + " " + patronymic}\n📧 Email: {email}\n📞 Телефон: {number_phone}\n📑 Экзамен: {type_of_exam}\n▶️ Теперь можешь пользоваться всеми функциями!"""
+    full_name = f"{last_name} {first_name} {patronymic}"
+    return (
+        "✅ Регистрация завершена!\n"
+        f"👤 ФИО: {full_name}\n"
+        f"📧 Email: {email}\n"
+        f"📞 Телефон: {number_phone}\n"
+        f"📑 Экзамен: {type_of_exam}\n"
+        "▶️ Теперь можешь пользоваться всеми функциями!"
+    )
 
 
 def generate_get_me_message(
     last_name, first_name, patronymic, email, number_phone, type_of_exam
 ):
-    return f"""Ваши данные:\n👤 ФИО: {last_name + " " + first_name + " " + patronymic}\n📧 Email: {email}\n📞 Телефон: {number_phone}\n📑 Экзамен: {type_of_exam}"""
+    full_name = f"{last_name} {first_name} {patronymic}"
+    return (
+        "📋 Ваши данные:\n"
+        f"👤 ФИО: {full_name}\n"
+        f"📧 Email: {email}\n"
+        f"📞 Телефон: {number_phone}\n"
+        f"📑 Экзамен: {type_of_exam}"
+    )

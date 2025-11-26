@@ -24,11 +24,11 @@ cancel_task_message = "Выбор задания отменен"
 send_image_error_message = "Произошла ошибка при отправке изображения"
 
 
-def generate_task_condition_message(task_number, id_of_task, condition_clean):
+def generate_task_condition_message(task_number, id_of_task, condition_clean) -> str:
     return f"📝 Задание №{task_number} ({id_of_task}):\n\n{condition_clean}"
 
 
-def generate_task_solution_message(task_number, id_of_task, solution_clean):
+def generate_task_solution_message(task_number, id_of_task, solution_clean) -> str:
     return f"✅ Решение для задания №{task_number} ({id_of_task}):\n\n{solution_clean}"
 
 
@@ -74,7 +74,7 @@ unknown_message = "Я не понимаю это сообщение. Пожал�
 
 def generate_registration_completed_message(
     last_name, first_name, patronymic, email, number_phone, type_of_exam
-):
+) -> str:
     full_name = f"{last_name} {first_name} {patronymic}"
     return (
         "✅ Регистрация завершена!\n"
@@ -88,7 +88,7 @@ def generate_registration_completed_message(
 
 def generate_get_me_message(
     last_name, first_name, patronymic, email, number_phone, type_of_exam
-):
+) -> str:
     full_name = f"{last_name} {first_name} {patronymic}"
     return (
         "📋 Ваши данные:\n"
